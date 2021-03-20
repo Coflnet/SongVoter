@@ -16,10 +16,10 @@ using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
-using .Attributes;
-using .Models;
+using Coflnet.SongVoter.Attributes;
+using Coflnet.SongVoter.Models;
 
-namespace .Controllers
+namespace Coflnet.SongVoter.Controllers
 { 
     /// <summary>
     /// 
