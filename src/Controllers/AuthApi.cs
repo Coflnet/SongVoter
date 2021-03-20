@@ -25,7 +25,7 @@ namespace .Controllers
     /// 
     /// </summary>
     [ApiController]
-    public class AuthApiController : ControllerBase
+    public abstract class AuthApiController : ControllerBase
     { 
         /// <summary>
         /// Authenticate with google
@@ -38,19 +38,6 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogle")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public virtual IActionResult AuthWithGoogle([FromBody]AuthToken body)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(AuthToken));
-            string exampleJson = null;
-            exampleJson = "{\n  \"token\" : \"ey...\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<AuthToken>(exampleJson)
-            : default(AuthToken);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult AuthWithGoogle([FromBody]AuthToken body);
     }
 }

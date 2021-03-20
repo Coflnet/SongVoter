@@ -25,7 +25,7 @@ namespace .Controllers
     /// 
     /// </summary>
     [ApiController]
-    public class ListApiController : ControllerBase
+    public abstract class ListApiController : ControllerBase
     { 
         /// <summary>
         /// Create a new playlist
@@ -37,20 +37,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("CreatePlaylist")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful created list")]
-        public virtual IActionResult CreatePlaylist([FromBody]PlayList body)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(PlayList));
-            string exampleJson = null;
-            exampleJson = "{\n  \"songs\" : [ 0, 0 ],\n  \"id\" : 43873,\n  \"title\" : \"My playlist\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<PlayList>(exampleJson)
-            : default(PlayList);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult CreatePlaylist([FromBody]PlayList body);
 
         /// <summary>
         /// Find playlist by ID
@@ -63,20 +50,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("GetListById")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        public virtual IActionResult GetListById([FromRoute (Name = "listId")][Required]long listId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(PlayList));
-            string exampleJson = null;
-            exampleJson = "{\n  \"songs\" : [ 0, 0 ],\n  \"id\" : 43873,\n  \"title\" : \"My playlist\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<PlayList>(exampleJson)
-            : default(PlayList);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult GetListById([FromRoute (Name = "listId")][Required]long listId);
 
         /// <summary>
         /// Get playlist for active user
@@ -87,19 +61,6 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("GetPlaylists")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<PlayList>), description: "successful response")]
-        public virtual IActionResult GetPlaylists()
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(List<PlayList>));
-            string exampleJson = null;
-            exampleJson = "{\n  \"songs\" : [ 0, 0 ],\n  \"id\" : 43873,\n  \"title\" : \"My playlist\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<List<PlayList>>(exampleJson)
-            : default(List<PlayList>);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult GetPlaylists();
     }
 }

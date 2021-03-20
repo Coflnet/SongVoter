@@ -1,8 +1,4 @@
-.sln
 README.md
-build.bat
-build.sh
-src/.csproj
 src/.gitignore
 src/Attributes/ValidateModelStateAttribute.cs
 src/Authentication/ApiAuthentication.cs
@@ -11,7 +7,6 @@ src/Controllers/ListApi.cs
 src/Controllers/PartyApi.cs
 src/Controllers/SongApi.cs
 src/Converters/CustomEnumConverter.cs
-src/Dockerfile
 src/Filters/BasePathFilter.cs
 src/Filters/GeneratePathParamsValidationFilter.cs
 src/Models/ApiResponse.cs

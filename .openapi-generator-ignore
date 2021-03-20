@@ -22,6 +22,7 @@
 # Then explicitly reverse the ignore rule for a single file:
 #!docs/README.md
 build.bat
+build.sh
 .sln
 src/.csproj
 src/Dockerfile

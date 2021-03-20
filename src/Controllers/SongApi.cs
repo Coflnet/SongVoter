@@ -25,7 +25,7 @@ namespace .Controllers
     /// 
     /// </summary>
     [ApiController]
-    public class SongApiController : ControllerBase
+    public abstract class SongApiController : ControllerBase
     { 
         /// <summary>
         /// Add a new song by url
@@ -36,14 +36,7 @@ namespace .Controllers
         [Route("/v1/songs")]
         [ValidateModelState]
         [SwaggerOperation("AddSong")]
-        public virtual IActionResult AddSong([FromBody]SongCreation body)
-        { 
-
-            //TODO: Uncomment the next line to return response 405 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(405);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult AddSong([FromBody]SongCreation body);
 
         /// <summary>
         /// Finds Song by search term
@@ -56,22 +49,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("FindSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Song>), description: "successful operation")]
-        public virtual IActionResult FindSong([FromQuery (Name = "term")][Required()]string term)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(List<Song>));
-            //TODO: Uncomment the next line to return response 400 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(400);
-            string exampleJson = null;
-            exampleJson = "{\n  \"id\" : 0,\n  \"occurences\" : [ {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  }, {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  } ],\n  \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<List<Song>>(exampleJson)
-            : default(List<Song>);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult FindSong([FromQuery (Name = "term")][Required()]string term);
 
         /// <summary>
         /// Find song by ID
@@ -87,23 +65,6 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("GetSongById")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "successful operation")]
-        public virtual IActionResult GetSongById([FromRoute (Name = "songId")][Required]long songId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Song));
-            //TODO: Uncomment the next line to return response 400 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(400);
-            //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(404);
-            string exampleJson = null;
-            exampleJson = "{\n  \"id\" : 0,\n  \"occurences\" : [ {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  }, {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  } ],\n  \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Song>(exampleJson)
-            : default(Song);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult GetSongById([FromRoute (Name = "songId")][Required]long songId);
     }
 }

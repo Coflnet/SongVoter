@@ -25,7 +25,7 @@ namespace .Controllers
     /// 
     /// </summary>
     [ApiController]
-    public class PartyApiController : ControllerBase
+    public abstract class PartyApiController : ControllerBase
     { 
         /// <summary>
         /// Creates an invite link for a party
@@ -36,14 +36,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/inviteLink")]
         [ValidateModelState]
         [SwaggerOperation("CreateInviteLink")]
-        public virtual IActionResult CreateInviteLink([FromRoute (Name = "partyId")][Required]string partyId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult CreateInviteLink([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// Creates a new party
@@ -54,20 +47,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
-        public virtual IActionResult CreateParty()
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Party));
-            string exampleJson = null;
-            exampleJson = "{\n  \"members\" : [ 0, 0 ],\n  \"name\" : \"Birthday\",\n  \"id\" : \"22fed76bbf8e4f8d93f8eb204ea42167\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Party>(exampleJson)
-            : default(Party);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult CreateParty();
 
         /// <summary>
         /// votes a song down so it is play later/not at all
@@ -79,14 +59,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/downvote/{songId}")]
         [ValidateModelState]
         [SwaggerOperation("DownvoteSong")]
-        public virtual IActionResult DownvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult DownvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
 
         /// <summary>
         /// Returns all parties of the curent user
@@ -97,20 +70,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("GetParties")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Party>), description: "successful created")]
-        public virtual IActionResult GetParties()
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(List<Party>));
-            string exampleJson = null;
-            exampleJson = "{\n  \"members\" : [ 0, 0 ],\n  \"name\" : \"Birthday\",\n  \"id\" : \"22fed76bbf8e4f8d93f8eb204ea42167\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<List<Party>>(exampleJson)
-            : default(List<Party>);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult GetParties();
 
         /// <summary>
         /// Invites a user to a party
@@ -122,14 +82,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/invite/{userId}")]
         [ValidateModelState]
         [SwaggerOperation("InviteToParty")]
-        public virtual IActionResult InviteToParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId)
-        { 
-
-            //TODO: Uncomment the next line to return response 201 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(201);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult InviteToParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
 
         /// <summary>
         /// Joins a party
@@ -140,14 +93,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/join")]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
-        public virtual IActionResult JoinParty([FromRoute (Name = "partyId")][Required]string partyId)
-        { 
-
-            //TODO: Uncomment the next line to return response 201 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(201);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult JoinParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// kicks a user from a party
@@ -159,14 +105,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/kick/{userId}")]
         [ValidateModelState]
         [SwaggerOperation("KickFromParty")]
-        public virtual IActionResult KickFromParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId)
-        { 
-
-            //TODO: Uncomment the next line to return response 201 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(201);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult KickFromParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
 
         /// <summary>
         /// Leave a party
@@ -177,14 +116,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/leave")]
         [ValidateModelState]
         [SwaggerOperation("LeaveParty")]
-        public virtual IActionResult LeaveParty([FromRoute (Name = "partyId")][Required]string partyId)
-        { 
-
-            //TODO: Uncomment the next line to return response 201 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(201);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult LeaveParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// gets the next Song
@@ -196,20 +128,7 @@ namespace .Controllers
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "invite created")]
-        public virtual IActionResult NextSong([FromRoute (Name = "partyId")][Required]string partyId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200, default(Song));
-            string exampleJson = null;
-            exampleJson = "{\n  \"id\" : 0,\n  \"occurences\" : [ {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  }, {\n    \"thumbnail\" : \"https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg\",\n    \"artist\" : \"Lady Gaga\",\n    \"externalId\" : \"bESGLojNYSo\",\n    \"id\" : 6,\n    \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\",\n    \"platform\" : \"youtube\"\n  } ],\n  \"title\" : \"Lady Gaga - Poker Face (Official Music Video)\"\n}";
-            
-            var example = exampleJson != null
-            ? JsonConvert.DeserializeObject<Song>(exampleJson)
-            : default(Song);
-            //TODO: Change the data returned
-            return new ObjectResult(example);
-        }
+        public abstract IActionResult NextSong([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// resets the parties playing state
@@ -220,14 +139,7 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/reset")]
         [ValidateModelState]
         [SwaggerOperation("ResetParty")]
-        public virtual IActionResult ResetParty([FromRoute (Name = "partyId")][Required]string partyId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult ResetParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// votes a song up so it is play sooner
@@ -240,13 +152,6 @@ namespace .Controllers
         [Route("/v1/party/{partyId}/upvote/{songId}")]
         [ValidateModelState]
         [SwaggerOperation("UpvoteSong")]
-        public virtual IActionResult UpvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId)
-        { 
-
-            //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-            // return StatusCode(200);
-
-            throw new NotImplementedException();
-        }
+        public abstract IActionResult UpvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
     }
 }
