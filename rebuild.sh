@@ -3,5 +3,5 @@ docker run --rm \
     -v $PWD:/local openapitools/openapi-generator-cli generate \
     -i /local/api.yaml \
     -g aspnetcore \
-    --additional-properties=packageName=,classModifier=abstract \
+    --additional-properties=packageName=Coflnet.SongVoter,sourceFolder=,classModifier=abstract \
     -o /local/

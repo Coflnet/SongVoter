@@ -1,4 +1,4 @@
-#  - ASP.NET Core 3.1 Server
+# Coflnet.SongVoter - ASP.NET Core 3.1 Server
 
 Definition for songvoter API
 
@@ -18,7 +18,7 @@ build.bat
 ## Run in Docker
 
 ```
-cd src/
-docker build -t  .
-docker run -p 5000:8080 
+cd /Coflnet.SongVoter
+docker build -t coflnet.songvoter .
+docker run -p 5000:8080 coflnet.songvoter
 ```
