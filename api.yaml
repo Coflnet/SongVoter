@@ -1,0 +1,483 @@
+swagger: "2.0"
+info:
+  description: "Definition for songvoter API"
+  version: "0.0.1"
+  title: "Songvoter"
+  termsOfService: "https://coflnet.com/terms/"
+  contact:
+    email: "support@coflnet.com"
+  license:
+    name: "AGPL"
+    url: "https://github.com/Coflnet/song-voter/blob/main/LICENSE"
+host: "songvoter.coflnet.com"
+basePath: "/v1"
+tags:
+- name: "song"
+  description: "Everything about Songs"
+  externalDocs:
+    description: ""
+    url: "http://swagger.io"
+- name: "list"
+  description: "Manage a playlist"
+schemes:
+- "https"
+paths:
+  /songs:
+    post:
+      tags:
+      - "song"
+      summary: "Add a new song by url"
+      description: ""
+      operationId: "addSong"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Pet object that needs to be added to the store"
+        required: true
+        schema:
+          $ref: "#/definitions/SongCreation"
+      responses:
+        "405":
+          description: "Invalid input"
+      security:
+      - songvoter_auth:
+        - "write:song"
+        - "read:song"
+  /songs/search:
+    get:
+      tags:
+      - "song"
+      summary: "Finds Song by search term"
+      operationId: "findSong"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "term"
+        in: "query"
+        description: "Search term to serach for"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Song"
+        "400":
+          description: "Invalid search term"
+      security:
+      - songvoter_auth:
+        - "read:song"
+  /songs/{songId}:
+    get:
+      tags:
+      - "song"
+      summary: "Find song by ID"
+      description: "Returns a single song"
+      operationId: "getSongById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "songId"
+        in: "path"
+        description: "ID of song to return"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Song"
+        "400":
+          description: "Invalid ID supplied"
+        "404":
+          description: "Song not found"
+      security:
+      - api_key: []
+  /lists:
+    post:
+      tags:
+      - "list"
+      summary: "Create a new playlist"
+      operationId: "createPlaylist"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "An array of songIds to be added to the song"
+        required: true
+        schema:
+          $ref: "#/definitions/PlayList"
+      responses:
+        "200":
+          description: "successful created list"
+          schema:
+            $ref: "#/definitions/PlayList"
+    get:
+      tags:
+      - "list"
+      summary: "Get playlist for active user"
+      operationId: "getPlaylists"
+      responses:
+        "200":
+          description: "successful response"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/PlayList"
+  /lists/{listId}:
+    get:
+      tags:
+      - "list"
+      summary: "Find playlist by ID"
+      description: "Returns a playList"
+      operationId: "getListById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "listId"
+        in: "path"
+        description: "ID of list to return"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/PlayList"
+
+  /auth/google:
+    post:
+      tags:
+      - "auth"
+      summary: "Authenticate with google"
+      description: "Exchange a google identity token for a songvoter token"
+      operationId: "authWithGoogle"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "The google identity token"
+        required: true
+        schema:
+          $ref: "#/definitions/AuthToken"
+      responses:
+        "200":
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/AuthToken"
+
+
+  /partys:
+    post:
+      tags:
+      - "party"
+      summary: "Creates a new party"
+      operationId: "createParty"
+      responses:
+        "200":
+          description: "successful created"
+          schema:
+            $ref: "#/definitions/Party"
+            
+    get:
+      tags:
+      - "party"
+      summary: "Returns all parties of the curent user"
+      operationId: "getParties"
+      responses:
+        "200":
+          description: "successful created"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Party"   
+  /party/{partyId}/join:
+    post:
+      tags:
+      - "party"
+      summary: "Joins a party"
+      operationId: "joinParty"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to join"
+        required: true
+        type: "string"
+      responses:
+        "201":
+          description: "joined successfully"
+
+  /party/{partyId}/leave:
+    post:
+      tags:
+      - "party"
+      summary: "Leave a party"
+      operationId: "leaveParty"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to leave"
+        required: true
+        type: "string"
+      responses:
+        "201":
+          description: "left successfully"
+
+  /party/{partyId}/kick/{userId}:
+    post:
+      tags:
+      - "party"
+      summary: "kicks a user from a party"
+      operationId: "kickFromParty"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to leave"
+        required: true
+        type: "string"
+      - name: "userId"
+        in: "path"
+        description: "ID of user to kick"
+        required: true
+        type: "string"
+      responses:
+        "201":
+          description: "left successfully"
+
+  /party/{partyId}/invite/{userId}:
+    post:
+      tags:
+      - "party"
+      summary: "Invites a user to a party"
+      operationId: "inviteToParty"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to invite to"
+        required: true
+        type: "string"
+      - name: "userId"
+        in: "path"
+        description: "ID of user to invite"
+        required: true
+        type: "string"
+      responses:
+        "201":
+          description: "invite sent"
+
+  /party/{partyId}/inviteLink:
+    get:
+      tags:
+      - "party"
+      summary: "Creates an invite link for a party"
+      operationId: "createInviteLink"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to invite to"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "invite created"
+          
+  /party/{partyId}/nextSong:
+    get:
+      tags:
+      - "party"
+      summary: "gets the next Song"
+      operationId: "nextSong"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "invite created"
+          schema:
+            $ref: "#/definitions/Song"
+  /party/{partyId}/reset:
+    post:
+      tags:
+      - "party"
+      summary: "resets the parties playing state"
+      operationId: "resetParty"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party to invite to"
+        required: true
+        type: "string"
+      responses:
+        "200":
+          description: "reset party"
+  /party/{partyId}/upvote/{songId}:
+    post:
+      tags:
+      - "party"
+      summary: "votes a song up so it is play sooner"
+      description: "Adds an upvote to an song wich causes it to be played sooner. Also adds new songs to a party"
+      operationId: "upvoteSong"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party"
+        required: true
+        type: "string"
+      - name: "songId"
+        in: "path"
+        description: "ID of the song to upvote"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: "upvoted"
+  /party/{partyId}/downvote/{songId}:
+    post:
+      tags:
+      - "party"
+      summary: "votes a song down so it is play later/not at all"
+      operationId: "downvoteSong"
+      parameters:
+      - name: "partyId"
+        in: "path"
+        description: "ID of party"
+        required: true
+        type: "string"
+      - name: "songId"
+        in: "path"
+        description: "ID of the song"
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: "downvote accepted"
+          
+
+securityDefinitions:
+  songvoter_auth:
+    type: "oauth2"
+    authorizationUrl: "https://songvoter.coflnet.com/oauth/dialog"
+    flow: "implicit"
+    scopes:
+      write:song: "modify songs"
+      read:song: "read songs "
+  api_key:
+    type: "apiKey"
+    name: "api_key"
+    in: "header"
+definitions:
+  ExternalSong:
+    type: "object"
+    required: 
+    - "externalId"
+    - "platform"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      title:
+        type: "string"
+        example: "Lady Gaga - Poker Face (Official Music Video)"
+      artist:
+        type: "string"
+        example: "Lady Gaga"
+      thumbnail:
+        type: "string"
+        example: "https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg"
+      externalId:
+        type: "string"
+        example: "bESGLojNYSo"
+      platform:
+        type: "string"
+        description: "The platform of this song"
+        enum:
+        - "youtube"
+        - "spotify"
+    xml:
+      name: "Tag"
+  Song:
+    type: "object"
+    required:
+    - "song"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      title:
+        type: "string"
+        example: "Lady Gaga - Poker Face (Official Music Video)"
+      occurences:
+        type: "array"
+        items:
+          $ref: '#/definitions/ExternalSong'
+
+  SongCreation:
+    type: "object"
+    properties:
+      externalId:
+        type: "string"
+        example: "bESGLojNYSo"
+      platform:
+        type: "string"
+        description: "The platform of this song"
+        enum:
+        - "youtube"
+        - "spotify"      
+  PlayList:      
+    type: "object"
+    properties:
+      id:
+        type: integer
+        example: 43873
+      title:
+        type: "string"
+        example: "My playlist"
+      songs:
+        type: "array"
+        items: 
+          type: integer
+  AuthToken:
+    type: "object"
+    properties:
+      token:
+        type: string
+        example: "ey..."
+  Party:
+    type: "object"
+    properties:
+      id:
+        type: string
+        example: "22fed76bbf8e4f8d93f8eb204ea42167"
+      name:
+        type: string
+        example: "Birthday"
+      members:
+        type: "array"
+        items:
+          description: "userIds"
+          type: integer
+
+  ApiResponse:
+    type: "object"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      type:
+        type: "string"
+      message:
+        type: "string"
+externalDocs:
+  description: "Find out more about Swagger"
+  url: "http://swagger.io"
