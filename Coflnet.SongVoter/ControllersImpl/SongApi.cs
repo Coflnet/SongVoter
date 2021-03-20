@@ -19,52 +19,10 @@ using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.Models;
 
-namespace Coflnet.SongVoter.Controllers
+namespace Coflnet.SongVoter.Controllers.Impl
 { 
-    /// <summary>
-    /// 
-    /// </summary>
-    [ApiController]
-    public abstract class SongApiController : ControllerBase
-    { 
-        /// <summary>
-        /// Add a new song by url
-        /// </summary>
-        /// <param name="body">Pet object that needs to be added to the store</param>
-        /// <response code="405">Invalid input</response>
-        [HttpPost]
-        [Route("/v1/songs")]
-        [ValidateModelState]
-        [SwaggerOperation("AddSong")]
-        public abstract IActionResult AddSong([FromBody]SongCreation body);
-
-        /// <summary>
-        /// Finds Song by search term
-        /// </summary>
-        /// <param name="term">Search term to serach for</param>
-        /// <response code="200">successful operation</response>
-        /// <response code="400">Invalid search term</response>
-        [HttpGet]
-        [Route("/v1/songs/search")]
-        [ValidateModelState]
-        [SwaggerOperation("FindSong")]
-        [SwaggerResponse(statusCode: 200, type: typeof(List<Song>), description: "successful operation")]
-        public abstract IActionResult FindSong([FromQuery (Name = "term")][Required()]string term);
-
-        /// <summary>
-        /// Find song by ID
-        /// </summary>
-        /// <remarks>Returns a single song</remarks>
-        /// <param name="songId">ID of song to return</param>
-        /// <response code="200">successful operation</response>
-        /// <response code="400">Invalid ID supplied</response>
-        /// <response code="404">Song not found</response>
-        [HttpGet]
-        [Route("/v1/songs/{songId}")]
-        [Authorize(Policy = "api_key")]
-        [ValidateModelState]
-        [SwaggerOperation("GetSongById")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "successful operation")]
-        public abstract IActionResult GetSongById([FromRoute (Name = "songId")][Required]long songId);
+    public class SongApiControllerImpl : SongApiController
+    {
+        
     }
 }
