@@ -23,6 +23,8 @@ using Newtonsoft.Json.Serialization;
 using Coflnet.SongVoter.Authentication;
 using Coflnet.SongVoter.Filters;
 using Coflnet.SongVoter.OpenApi;
+using SimplerConfig;
+using Microsoft.EntityFrameworkCore;
 
 namespace Coflnet.SongVoter
 {
@@ -57,7 +59,7 @@ namespace Coflnet.SongVoter
                 authConfig.AddPolicy("api_key", policyBuilder =>
                 {
                     policyBuilder
-                        .AddRequirements(new ApiKeyRequirement(new[] { "my-secret-key" },"api_key"));
+                        .AddRequirements(new ApiKeyRequirement(new[] { "my-secret-key" }, "api_key"));
                 });
             });
 
@@ -104,8 +106,13 @@ namespace Coflnet.SongVoter
                     // Use [ValidateModelState] on Actions to actually validate it in C# as well!
                     c.OperationFilter<GeneratePathParamsValidationFilter>();
                 });
-                services
-                    .AddSwaggerGenNewtonsoftSupport();
+            services
+                .AddSwaggerGenNewtonsoftSupport();
+
+            services.AddDbContextPool<DBModels.SVContext>(options =>
+                options.UseMySql(Config.Instance["DefaultConnection"],ServerVersion.AutoDetect(Config.Instance["DefaultConnection"]),options=>{
+                    options.EnableRetryOnFailure();
+                }));
         }
 
         /// <summary>
