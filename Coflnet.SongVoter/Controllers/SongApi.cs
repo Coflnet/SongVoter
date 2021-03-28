@@ -11,9 +11,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
@@ -30,13 +31,14 @@ namespace Coflnet.SongVoter.Controllers
         /// <summary>
         /// Add a new song by url
         /// </summary>
-        /// <param name="body">Pet object that needs to be added to the store</param>
+        /// <param name="songCreation">Pet object that needs to be added to the store</param>
         /// <response code="405">Invalid input</response>
         [HttpPost]
         [Route("/v1/songs")]
+        [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AddSong")]
-        public abstract IActionResult AddSong([FromBody]SongCreation body);
+        public abstract IActionResult AddSong([FromBody]SongCreation songCreation);
 
         /// <summary>
         /// Finds Song by search term
@@ -46,6 +48,9 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="400">Invalid search term</response>
         [HttpGet]
         [Route("/v1/songs/search")]
+        [Authorize]
+
+        [Microsoft.AspNetCore.Authorization.Authorize]
         [ValidateModelState]
         [SwaggerOperation("FindSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Song>), description: "successful operation")]
@@ -60,8 +65,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="400">Invalid ID supplied</response>
         /// <response code="404">Song not found</response>
         [HttpGet]
-        [Route("/v1/songs/{songId}")]
-        [Authorize(Policy = "api_key")]
+        [Route("/v1/song/{songId}")]
         [ValidateModelState]
         [SwaggerOperation("GetSongById")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "successful operation")]

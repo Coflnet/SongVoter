@@ -23,6 +23,8 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         public override IActionResult FindSong([FromQuery(Name = "term"), Required] string term)
         {
+            this.User.RequireScope(Scope.Song);
+
             var db = this.data
                 .Songs.Where(s=>s.Id == 1).FirstOrDefault();
 

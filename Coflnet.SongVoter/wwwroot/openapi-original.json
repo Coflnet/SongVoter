@@ -1,5 +1,5 @@
 {
-  "openapi" : "3.0.1",
+  "openapi" : "3.0.0",
   "info" : {
     "contact" : {
       "email" : "support@coflnet.com"
@@ -23,7 +23,6 @@
   "tags" : [ {
     "description" : "Everything about Songs",
     "externalDocs" : {
-      "description" : "",
       "url" : "http://swagger.io"
     },
     "name" : "song"
@@ -48,16 +47,14 @@
         },
         "responses" : {
           "405" : {
-            "content" : { },
             "description" : "Invalid input"
           }
         },
         "security" : [ {
-          "songvoter_auth" : [ "write:song", "read:song" ]
+          "songvoter_auth" : [ "read:song" ]
         } ],
         "summary" : "Add a new song by url",
-        "tags" : [ "song" ],
-        "x-codegen-request-body-name" : "body"
+        "tags" : [ "song" ]
       }
     },
     "/songs/search" : {
@@ -65,12 +62,14 @@
         "operationId" : "findSong",
         "parameters" : [ {
           "description" : "Search term to serach for",
+          "explode" : true,
           "in" : "query",
           "name" : "term",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "form"
         } ],
         "responses" : {
           "200" : {
@@ -87,30 +86,31 @@
             "description" : "successful operation"
           },
           "400" : {
-            "content" : { },
             "description" : "Invalid search term"
           }
         },
         "security" : [ {
-          "songvoter_auth" : [ "read:song" ]
+          "jwt" : [ "read:song" ]
         } ],
         "summary" : "Finds Song by search term",
         "tags" : [ "song" ]
       }
     },
-    "/songs/{songId}" : {
+    "/song/{songId}" : {
       "get" : {
         "description" : "Returns a single song",
         "operationId" : "getSongById",
         "parameters" : [ {
           "description" : "ID of song to return",
+          "explode" : false,
           "in" : "path",
           "name" : "songId",
           "required" : true,
           "schema" : {
             "format" : "int64",
             "type" : "integer"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
@@ -124,16 +124,14 @@
             "description" : "successful operation"
           },
           "400" : {
-            "content" : { },
             "description" : "Invalid ID supplied"
           },
           "404" : {
-            "content" : { },
             "description" : "Song not found"
           }
         },
         "security" : [ {
-          "api_key" : [ ]
+          "songvoter_auth" : [ "read:song" ]
         } ],
         "summary" : "Find song by ID",
         "tags" : [ "song" ]
@@ -164,7 +162,7 @@
         "operationId" : "createPlaylist",
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/PlayList"
               }
@@ -186,8 +184,7 @@
           }
         },
         "summary" : "Create a new playlist",
-        "tags" : [ "list" ],
-        "x-codegen-request-body-name" : "body"
+        "tags" : [ "list" ]
       }
     },
     "/lists/{listId}" : {
@@ -196,13 +193,15 @@
         "operationId" : "getListById",
         "parameters" : [ {
           "description" : "ID of list to return",
+          "explode" : false,
           "in" : "path",
           "name" : "listId",
           "required" : true,
           "schema" : {
             "format" : "int64",
             "type" : "integer"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
@@ -226,7 +225,7 @@
         "operationId" : "authWithGoogle",
         "requestBody" : {
           "content" : {
-            "*/*" : {
+            "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/AuthToken"
               }
@@ -248,8 +247,7 @@
           }
         },
         "summary" : "Authenticate with google",
-        "tags" : [ "auth" ],
-        "x-codegen-request-body-name" : "body"
+        "tags" : [ "auth" ]
       }
     },
     "/partys" : {
@@ -296,16 +294,17 @@
         "operationId" : "joinParty",
         "parameters" : [ {
           "description" : "ID of party to join",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "201" : {
-            "content" : { },
             "description" : "joined successfully"
           }
         },
@@ -318,16 +317,17 @@
         "operationId" : "leaveParty",
         "parameters" : [ {
           "description" : "ID of party to leave",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "201" : {
-            "content" : { },
             "description" : "left successfully"
           }
         },
@@ -340,24 +340,27 @@
         "operationId" : "kickFromParty",
         "parameters" : [ {
           "description" : "ID of party to leave",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         }, {
           "description" : "ID of user to kick",
+          "explode" : false,
           "in" : "path",
           "name" : "userId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "201" : {
-            "content" : { },
             "description" : "left successfully"
           }
         },
@@ -370,24 +373,27 @@
         "operationId" : "inviteToParty",
         "parameters" : [ {
           "description" : "ID of party to invite to",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         }, {
           "description" : "ID of user to invite",
+          "explode" : false,
           "in" : "path",
           "name" : "userId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "201" : {
-            "content" : { },
             "description" : "invite sent"
           }
         },
@@ -400,16 +406,17 @@
         "operationId" : "createInviteLink",
         "parameters" : [ {
           "description" : "ID of party to invite to",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
-            "content" : { },
             "description" : "invite created"
           }
         },
@@ -422,12 +429,14 @@
         "operationId" : "nextSong",
         "parameters" : [ {
           "description" : "ID of party",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
@@ -450,16 +459,17 @@
         "operationId" : "resetParty",
         "parameters" : [ {
           "description" : "ID of party to invite to",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
-            "content" : { },
             "description" : "reset party"
           }
         },
@@ -473,24 +483,27 @@
         "operationId" : "upvoteSong",
         "parameters" : [ {
           "description" : "ID of party",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         }, {
           "description" : "ID of the song to upvote",
+          "explode" : false,
           "in" : "path",
           "name" : "songId",
           "required" : true,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
-            "content" : { },
             "description" : "upvoted"
           }
         },
@@ -503,24 +516,27 @@
         "operationId" : "downvoteSong",
         "parameters" : [ {
           "description" : "ID of party",
+          "explode" : false,
           "in" : "path",
           "name" : "partyId",
           "required" : true,
           "schema" : {
             "type" : "string"
-          }
+          },
+          "style" : "simple"
         }, {
           "description" : "ID of the song",
+          "explode" : false,
           "in" : "path",
           "name" : "songId",
           "required" : true,
           "schema" : {
             "type" : "integer"
-          }
+          },
+          "style" : "simple"
         } ],
         "responses" : {
           "200" : {
-            "content" : { },
             "description" : "downvote accepted"
           }
         },
@@ -609,6 +625,7 @@
             "type" : "array"
           }
         },
+        "required" : [ "song" ],
         "type" : "object"
       },
       "SongCreation" : {
@@ -719,12 +736,11 @@
         },
         "type" : "oauth2"
       },
-      "api_key" : {
-        "in" : "header",
-        "name" : "api_key",
-        "type" : "apiKey"
+      "jwt" : {
+        "bearerFormat" : "JWT",
+        "scheme" : "bearer",
+        "type" : "http"
       }
     }
-  },
-  "x-original-swagger-version" : "2.0"
+  }
 }

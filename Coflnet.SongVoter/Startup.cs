@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -29,6 +30,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Threading.Tasks;
+using Coflnet.SongVoter.DBModels;
+using Coflnet.SongVoter.Middleware;
 
 namespace Coflnet.SongVoter
 {
@@ -58,14 +61,7 @@ namespace Coflnet.SongVoter
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<IAuthorizationHandler, ApiKeyRequirementHandler>();
-            services.AddAuthorization(authConfig =>
-            {
-                authConfig.AddPolicy("api_key", policyBuilder =>
-                {
-                    policyBuilder
-                        .AddRequirements(new ApiKeyRequirement(new[] { "my-secret-key" }, "api_key"));
-                });
-            });
+
 
             // Add framework services.
             services
@@ -122,12 +118,12 @@ namespace Coflnet.SongVoter
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = issuer,
-                    ValidAudience = issuer,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = issuer,
+                        ValidAudience = issuer,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
                     };
 
                     options.Events = new JwtBearerEvents
@@ -144,7 +140,8 @@ namespace Coflnet.SongVoter
                 });
 
             services.AddDbContextPool<DBModels.SVContext>(options =>
-                options.UseMySql(Config.Instance["DefaultConnection"],ServerVersion.AutoDetect(Config.Instance["DefaultConnection"]),options=>{
+                options.UseMySql(Config.Instance["DefaultConnection"], ServerVersion.AutoDetect(Config.Instance["DefaultConnection"]), options =>
+                {
                     options.EnableRetryOnFailure();
                 }));
         }
@@ -183,6 +180,8 @@ namespace Coflnet.SongVoter
                     // c.SwaggerEndpoint("/openapi-original.json", "Songvoter Original");
                 });
             app.UseRouting();
+            app.UseMiddleware<ErrorMiddleware>();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
                 {

@@ -11,9 +11,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
@@ -31,13 +32,14 @@ namespace Coflnet.SongVoter.Controllers
         /// Authenticate with google
         /// </summary>
         /// <remarks>Exchange a google identity token for a songvoter token</remarks>
-        /// <param name="body">The google identity token</param>
+        /// <param name="authToken">The google identity token</param>
         /// <response code="200">successful operation</response>
         [HttpPost]
         [Route("/v1/auth/google")]
+        [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogle")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public abstract IActionResult AuthWithGoogle([FromBody]AuthToken body);
+        public abstract IActionResult AuthWithGoogle([FromBody]AuthToken authToken);
     }
 }

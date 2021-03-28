@@ -26,3 +26,6 @@ build.sh
 .sln
 src/.csproj
 src/Dockerfile
+Coflnet.SongVoter/Program.cs
+Coflnet.SongVoter/Startup.cs
+Coflnet.SongVoter/Coflnet.SongVoter.csproj

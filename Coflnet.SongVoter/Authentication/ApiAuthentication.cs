@@ -48,15 +48,6 @@ namespace Coflnet.SongVoter.Authentication
         private void SucceedRequirementIfApiKeyPresentAndValid(AuthorizationHandlerContext context, ApiKeyRequirement requirement)
         {
 
-            if (context.Resource is AuthorizationFilterContext authorizationFilterContext)
-            {
-                var apiKey = authorizationFilterContext.HttpContext.Request.Headers["api_key"].FirstOrDefault();
-                if (requirement.PolicyName == "api_key" && apiKey != null && requirement.ApiKeys.Any(requiredApiKey => apiKey == requiredApiKey))
-                {
-                    context.Succeed(requirement);
-                }
-            }
-
         }
     }
 }

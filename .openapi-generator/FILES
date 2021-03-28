@@ -11,6 +11,7 @@ Coflnet.SongVoter/Converters/CustomEnumConverter.cs
 Coflnet.SongVoter/Dockerfile
 Coflnet.SongVoter/Filters/BasePathFilter.cs
 Coflnet.SongVoter/Filters/GeneratePathParamsValidationFilter.cs
+Coflnet.SongVoter/Formatters/InputFormatterStream.cs
 Coflnet.SongVoter/Models/ApiResponse.cs
 Coflnet.SongVoter/Models/AuthToken.cs
 Coflnet.SongVoter/Models/ExternalSong.cs

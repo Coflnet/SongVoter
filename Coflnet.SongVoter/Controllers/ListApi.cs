@@ -11,9 +11,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
@@ -30,14 +31,15 @@ namespace Coflnet.SongVoter.Controllers
         /// <summary>
         /// Create a new playlist
         /// </summary>
-        /// <param name="body">An array of songIds to be added to the song</param>
+        /// <param name="playList">An array of songIds to be added to the song</param>
         /// <response code="200">successful created list</response>
         [HttpPost]
         [Route("/v1/lists")]
+        [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("CreatePlaylist")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful created list")]
-        public abstract IActionResult CreatePlaylist([FromBody]PlayList body);
+        public abstract IActionResult CreatePlaylist([FromBody]PlayList playList);
 
         /// <summary>
         /// Find playlist by ID
