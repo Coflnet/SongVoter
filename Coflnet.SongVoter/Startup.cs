@@ -25,6 +25,10 @@ using Coflnet.SongVoter.Filters;
 using Coflnet.SongVoter.OpenApi;
 using SimplerConfig;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Threading.Tasks;
 
 namespace Coflnet.SongVoter
 {
@@ -109,6 +113,36 @@ namespace Coflnet.SongVoter
             services
                 .AddSwaggerGenNewtonsoftSupport();
 
+
+            string key = SimplerConfig.Config.Instance["jwt:secret"]; //this should be same which is used while creating token      
+            var issuer = "http://mysite.com"; //this should be same which is used while creating token  
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = issuer,
+                    ValidAudience = issuer,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnAuthenticationFailed = context =>
+                        {
+                            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                            {
+                                context.Response.Headers.Add("Token-Expired", "true");
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
+                });
+
             services.AddDbContextPool<DBModels.SVContext>(options =>
                 options.UseMySql(Config.Instance["DefaultConnection"],ServerVersion.AutoDetect(Config.Instance["DefaultConnection"]),options=>{
                     options.EnableRetryOnFailure();
@@ -149,6 +183,7 @@ namespace Coflnet.SongVoter
                     // c.SwaggerEndpoint("/openapi-original.json", "Songvoter Original");
                 });
             app.UseRouting();
+            app.UseAuthorization();
             app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllers();

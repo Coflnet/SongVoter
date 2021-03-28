@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Coflnet.SongVoter.Migrations
 {
     [DbContext(typeof(SVContext))]
-    [Migration("20210323212516_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20210325202624_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -29,7 +29,7 @@ namespace Coflnet.SongVoter.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Songs");
                 });
 #pragma warning restore 612, 618
         }

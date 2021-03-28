@@ -8,6 +8,6 @@ namespace Coflnet.SongVoter.DBModels
         {
         }
 
-        public DbSet<Song> Courses { get; set; }
+        public DbSet<Song> Songs { get; set; }
     }
 }

@@ -27,7 +27,7 @@ namespace Coflnet.SongVoter.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Songs");
                 });
 #pragma warning restore 612, 618
         }
