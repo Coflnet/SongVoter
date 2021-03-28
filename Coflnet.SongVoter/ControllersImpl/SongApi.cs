@@ -10,10 +10,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
 {
     public class SongApiControllerImpl : SongApiController
     {
-        private readonly SVContext data;
+        private readonly SVContext db;
         public SongApiControllerImpl(SVContext data)
         {
-            this.data = data;
+            this.db = data;
         }
 
         public override IActionResult AddSong([FromBody] SongCreation body)
@@ -25,7 +25,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
         {
             this.User.RequireScope(Scope.Song);
 
-            var db = this.data
+            var db = this.db
                 .Songs.Where(s=>s.Id == 1).FirstOrDefault();
 
             return Ok(new Models.Song(){

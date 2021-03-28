@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Coflnet.SongVoter.DBModels
 {
-    public class User : IdentityUser<int>
+    public class User
     {
-        public string GoogleId {get;set;}
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string GoogleId { get; set; }
     }
 }
