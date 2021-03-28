@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -40,6 +41,6 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogle")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public abstract IActionResult AuthWithGoogle([FromBody]AuthToken authToken);
+        public abstract Task<IActionResult> AuthWithGoogle([FromBody]AuthToken authToken);
     }
 }

@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -38,7 +39,7 @@ namespace Coflnet.SongVoter.Controllers
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AddSong")]
-        public abstract IActionResult AddSong([FromBody]SongCreation songCreation);
+        public abstract Task<IActionResult> AddSong([FromBody]SongCreation songCreation);
 
         /// <summary>
         /// Finds Song by search term
@@ -49,12 +50,10 @@ namespace Coflnet.SongVoter.Controllers
         [HttpGet]
         [Route("/v1/songs/search")]
         [Authorize]
-
-        [Microsoft.AspNetCore.Authorization.Authorize]
         [ValidateModelState]
         [SwaggerOperation("FindSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Song>), description: "successful operation")]
-        public abstract IActionResult FindSong([FromQuery (Name = "term")][Required()]string term);
+        public abstract Task<IActionResult> FindSong([FromQuery (Name = "term")][Required()]string term);
 
         /// <summary>
         /// Find song by ID
@@ -69,6 +68,6 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("GetSongById")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "successful operation")]
-        public abstract IActionResult GetSongById([FromRoute (Name = "songId")][Required]long songId);
+        public abstract Task<IActionResult> GetSongById([FromRoute (Name = "songId")][Required]long songId);
     }
 }

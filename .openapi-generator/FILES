@@ -2,7 +2,6 @@ Coflnet.SongVoter.sln
 Coflnet.SongVoter/.gitignore
 Coflnet.SongVoter/Attributes/ValidateModelStateAttribute.cs
 Coflnet.SongVoter/Authentication/ApiAuthentication.cs
-Coflnet.SongVoter/Coflnet.SongVoter.csproj
 Coflnet.SongVoter/Controllers/AuthApi.cs
 Coflnet.SongVoter/Controllers/ListApi.cs
 Coflnet.SongVoter/Controllers/PartyApi.cs
@@ -20,9 +19,7 @@ Coflnet.SongVoter/Models/PlayList.cs
 Coflnet.SongVoter/Models/Song.cs
 Coflnet.SongVoter/Models/SongCreation.cs
 Coflnet.SongVoter/OpenApi/TypeExtensions.cs
-Coflnet.SongVoter/Program.cs
 Coflnet.SongVoter/Properties/launchSettings.json
-Coflnet.SongVoter/Startup.cs
 Coflnet.SongVoter/appsettings.json
 Coflnet.SongVoter/wwwroot/README.md
 Coflnet.SongVoter/wwwroot/index.html

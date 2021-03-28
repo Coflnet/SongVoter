@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -39,7 +40,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("CreatePlaylist")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful created list")]
-        public abstract IActionResult CreatePlaylist([FromBody]PlayList playList);
+        public abstract Task<IActionResult> CreatePlaylist([FromBody]PlayList playList);
 
         /// <summary>
         /// Find playlist by ID
@@ -52,7 +53,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("GetListById")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        public abstract IActionResult GetListById([FromRoute (Name = "listId")][Required]long listId);
+        public abstract Task<IActionResult> GetListById([FromRoute (Name = "listId")][Required]long listId);
 
         /// <summary>
         /// Get playlist for active user
@@ -63,6 +64,6 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("GetPlaylists")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<PlayList>), description: "successful response")]
-        public abstract IActionResult GetPlaylists();
+        public abstract Task<IActionResult> GetPlaylists();
     }
 }

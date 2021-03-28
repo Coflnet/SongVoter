@@ -11,6 +11,7 @@ using Coflnet.SongVoter.DBModels;
 using Google.Apis.Auth;
 using Coflnet.SongVoter.Middleware;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -22,7 +23,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             this.db = data;
         }
 
-        public override IActionResult AuthWithGoogle([FromBody] AuthToken authToken)
+        public override async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
         {
             var data = ValidateToken(authToken.Token);
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
@@ -30,7 +31,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             {
                 var user = new User() { GoogleId = data.Subject, Name = data.Name };
                 db.Add(user);
-                db.SaveChanges ();
+                await db.SaveChangesAsync ();
                 userId = user.Id;
             }
 

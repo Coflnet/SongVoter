@@ -11,6 +11,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
@@ -37,7 +38,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/inviteLink")]
         [ValidateModelState]
         [SwaggerOperation("CreateInviteLink")]
-        public abstract IActionResult CreateInviteLink([FromRoute (Name = "partyId")][Required]string partyId);
+        public abstract Task<IActionResult> CreateInviteLink([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// Creates a new party
@@ -48,7 +49,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
-        public abstract IActionResult CreateParty();
+        public abstract Task<IActionResult> CreateParty();
 
         /// <summary>
         /// votes a song down so it is play later/not at all
@@ -60,7 +61,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/downvote/{songId}")]
         [ValidateModelState]
         [SwaggerOperation("DownvoteSong")]
-        public abstract IActionResult DownvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
+        public abstract Task<IActionResult> DownvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
 
         /// <summary>
         /// Returns all parties of the curent user
@@ -71,7 +72,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("GetParties")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Party>), description: "successful created")]
-        public abstract IActionResult GetParties();
+        public abstract Task<IActionResult> GetParties();
 
         /// <summary>
         /// Invites a user to a party
@@ -83,7 +84,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/invite/{userId}")]
         [ValidateModelState]
         [SwaggerOperation("InviteToParty")]
-        public abstract IActionResult InviteToParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
+        public abstract Task<IActionResult> InviteToParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
 
         /// <summary>
         /// Joins a party
@@ -94,7 +95,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/join")]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
-        public abstract IActionResult JoinParty([FromRoute (Name = "partyId")][Required]string partyId);
+        public abstract Task<IActionResult> JoinParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// kicks a user from a party
@@ -106,7 +107,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/kick/{userId}")]
         [ValidateModelState]
         [SwaggerOperation("KickFromParty")]
-        public abstract IActionResult KickFromParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
+        public abstract Task<IActionResult> KickFromParty([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "userId")][Required]string userId);
 
         /// <summary>
         /// Leave a party
@@ -117,7 +118,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/leave")]
         [ValidateModelState]
         [SwaggerOperation("LeaveParty")]
-        public abstract IActionResult LeaveParty([FromRoute (Name = "partyId")][Required]string partyId);
+        public abstract Task<IActionResult> LeaveParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// gets the next Song
@@ -129,7 +130,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "invite created")]
-        public abstract IActionResult NextSong([FromRoute (Name = "partyId")][Required]string partyId);
+        public abstract Task<IActionResult> NextSong([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// resets the parties playing state
@@ -140,7 +141,7 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/reset")]
         [ValidateModelState]
         [SwaggerOperation("ResetParty")]
-        public abstract IActionResult ResetParty([FromRoute (Name = "partyId")][Required]string partyId);
+        public abstract Task<IActionResult> ResetParty([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>
         /// votes a song up so it is play sooner
@@ -153,6 +154,6 @@ namespace Coflnet.SongVoter.Controllers
         [Route("/v1/party/{partyId}/upvote/{songId}")]
         [ValidateModelState]
         [SwaggerOperation("UpvoteSong")]
-        public abstract IActionResult UpvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
+        public abstract Task<IActionResult> UpvoteSong([FromRoute (Name = "partyId")][Required]string partyId, [FromRoute (Name = "songId")][Required]int songId);
     }
 }

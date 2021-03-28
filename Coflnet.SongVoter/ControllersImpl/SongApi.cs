@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.DBModels;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -16,17 +18,18 @@ namespace Coflnet.SongVoter.Controllers.Impl
             this.db = data;
         }
 
-        public override IActionResult AddSong([FromBody] SongCreation body)
+        public override Task<IActionResult> AddSong([FromBody] SongCreation body)
         {
+            
             throw new NotImplementedException();
         }
 
-        public override IActionResult FindSong([FromQuery(Name = "term"), Required] string term)
+        public override async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
         {
-            this.User.RequireScope(Scope.Song);
+            //this.User.RequireScope(Scope.Song);
 
-            var db = this.db
-                .Songs.Where(s=>s.Id == 1).FirstOrDefault();
+            var db = await this.db
+                .Songs.Where(s=>s.Id == 1).FirstOrDefaultAsync();
 
             return Ok(new Models.Song(){
                 Id = db.Id,
@@ -34,7 +37,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             });
         }
 
-        public override IActionResult GetSongById([FromRoute(Name = "songId"), Required] long songId)
+        public override Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] long songId)
         {
             throw new NotImplementedException();
         }
