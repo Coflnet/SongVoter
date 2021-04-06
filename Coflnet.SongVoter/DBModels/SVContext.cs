@@ -10,7 +10,7 @@ namespace Coflnet.SongVoter.DBModels
 
         public DbSet<Song> Songs { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<PlayList> PlayLists { get; set; }
+        public DbSet<Playlist> PlayLists { get; set; }
         public DbSet<ExternalSong> ExternalSong { get; set; }
     }
 }

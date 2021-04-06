@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Coflnet.SongVoter.DBModels
 {
-    public class PlayList
+    public class Playlist
     {
         /// <summary>
         /// Gets or Sets Id
@@ -21,6 +21,6 @@ namespace Coflnet.SongVoter.DBModels
         /// <summary>
         /// Gets or Sets Songs
         /// </summary>
-        public List<int> Songs { get; set; }
+        public ICollection<Song> Songs { get; set; }
     }
 }

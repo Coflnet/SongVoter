@@ -15,6 +15,7 @@ namespace Coflnet.SongVoter
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
+            SimplerConfig.SConfig.Instance.StartArgs = args;
             CreateHostBuilder(args).Build().Run();
         }
 

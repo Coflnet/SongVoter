@@ -3,14 +3,16 @@ using System;
 using Coflnet.SongVoter.DBModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Coflnet.SongVoter.Migrations
 {
     [DbContext(typeof(SVContext))]
-    partial class SVContextModelSnapshot : ModelSnapshot
+    [Migration("20210401153725_Initial")]
+    partial class Initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

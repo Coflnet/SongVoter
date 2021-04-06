@@ -12,6 +12,10 @@ namespace Coflnet.SongVoter.DBModels
         public string Title { get; set; }
 
         public List<ExternalSong> ExternalSongs { get; set; }
-
+        /// <summary>
+        /// Plalists containing this song
+        /// here to autogenerate many-to-many table
+        /// </summary>
+        public ICollection<Playlist> Playlists { get; set; }
     }
 }
