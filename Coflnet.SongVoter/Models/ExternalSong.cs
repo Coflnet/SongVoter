@@ -27,12 +27,6 @@ namespace Coflnet.SongVoter.Models
     public partial class ExternalSong : IEquatable<ExternalSong>
     {
         /// <summary>
-        /// Gets or Sets Id
-        /// </summary>
-        [DataMember(Name="id", EmitDefaultValue=false)]
-        public long Id { get; set; }
-
-        /// <summary>
         /// Gets or Sets Title
         /// </summary>
         [DataMember(Name="title", EmitDefaultValue=false)]
@@ -96,7 +90,6 @@ namespace Coflnet.SongVoter.Models
         {
             var sb = new StringBuilder();
             sb.Append("class ExternalSong {\n");
-            sb.Append("  Id: ").Append(Id).Append("\n");
             sb.Append("  Title: ").Append(Title).Append("\n");
             sb.Append("  Artist: ").Append(Artist).Append("\n");
             sb.Append("  Thumbnail: ").Append(Thumbnail).Append("\n");
@@ -139,11 +132,6 @@ namespace Coflnet.SongVoter.Models
 
             return 
                 (
-                    Id == other.Id ||
-                    
-                    Id.Equals(other.Id)
-                ) && 
-                (
                     Title == other.Title ||
                     Title != null &&
                     Title.Equals(other.Title)
@@ -180,8 +168,6 @@ namespace Coflnet.SongVoter.Models
             {
                 var hashCode = 41;
                 // Suitable nullity checks etc, of course :)
-                    
-                    hashCode = hashCode * 59 + Id.GetHashCode();
                     if (Title != null)
                     hashCode = hashCode * 59 + Title.GetHashCode();
                     if (Artist != null)

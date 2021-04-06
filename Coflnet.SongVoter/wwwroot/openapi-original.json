@@ -51,7 +51,7 @@
           }
         },
         "security" : [ {
-          "songvoter_auth" : [ "read:song" ]
+          "jwt" : [ ]
         } ],
         "summary" : "Add a new song by url",
         "tags" : [ "song" ]
@@ -90,7 +90,7 @@
           }
         },
         "security" : [ {
-          "jwt" : [ "read:song" ]
+          "jwt" : [ ]
         } ],
         "summary" : "Finds Song by search term",
         "tags" : [ "song" ]
@@ -107,8 +107,7 @@
           "name" : "songId",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "type" : "integer"
+            "type" : "string"
           },
           "style" : "simple"
         } ],
@@ -131,7 +130,7 @@
           }
         },
         "security" : [ {
-          "songvoter_auth" : [ "read:song" ]
+          "jwt" : [ ]
         } ],
         "summary" : "Find song by ID",
         "tags" : [ "song" ]
@@ -155,6 +154,9 @@
             "description" : "successful response"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Get playlist for active user",
         "tags" : [ "list" ]
       },
@@ -183,6 +185,9 @@
             "description" : "successful created list"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Create a new playlist",
         "tags" : [ "list" ]
       }
@@ -198,8 +203,7 @@
           "name" : "listId",
           "required" : true,
           "schema" : {
-            "format" : "int64",
-            "type" : "integer"
+            "type" : "string"
           },
           "style" : "simple"
         } ],
@@ -215,6 +219,9 @@
             "description" : "successful operation"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Find playlist by ID",
         "tags" : [ "list" ]
       }
@@ -268,6 +275,9 @@
             "description" : "successful created"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Returns all parties of the curent user",
         "tags" : [ "party" ]
       },
@@ -285,6 +295,9 @@
             "description" : "successful created"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Creates a new party",
         "tags" : [ "party" ]
       }
@@ -308,6 +321,9 @@
             "description" : "joined successfully"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Joins a party",
         "tags" : [ "party" ]
       }
@@ -331,6 +347,9 @@
             "description" : "left successfully"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Leave a party",
         "tags" : [ "party" ]
       }
@@ -364,6 +383,9 @@
             "description" : "left successfully"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "kicks a user from a party",
         "tags" : [ "party" ]
       }
@@ -397,6 +419,9 @@
             "description" : "invite sent"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Invites a user to a party",
         "tags" : [ "party" ]
       }
@@ -420,6 +445,9 @@
             "description" : "invite created"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "Creates an invite link for a party",
         "tags" : [ "party" ]
       }
@@ -450,6 +478,9 @@
             "description" : "invite created"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "gets the next Song",
         "tags" : [ "party" ]
       }
@@ -473,6 +504,9 @@
             "description" : "reset party"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "resets the parties playing state",
         "tags" : [ "party" ]
       }
@@ -498,7 +532,7 @@
           "name" : "songId",
           "required" : true,
           "schema" : {
-            "type" : "integer"
+            "type" : "string"
           },
           "style" : "simple"
         } ],
@@ -507,6 +541,9 @@
             "description" : "upvoted"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "votes a song up so it is play sooner",
         "tags" : [ "party" ]
       }
@@ -531,7 +568,7 @@
           "name" : "songId",
           "required" : true,
           "schema" : {
-            "type" : "integer"
+            "type" : "string"
           },
           "style" : "simple"
         } ],
@@ -540,6 +577,9 @@
             "description" : "downvote accepted"
           }
         },
+        "security" : [ {
+          "jwt" : [ ]
+        } ],
         "summary" : "votes a song down so it is play later/not at all",
         "tags" : [ "party" ]
       }
@@ -552,15 +592,10 @@
           "thumbnail" : "https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg",
           "artist" : "Lady Gaga",
           "externalId" : "bESGLojNYSo",
-          "id" : 6,
           "title" : "Lady Gaga - Poker Face (Official Music Video)",
           "platform" : "youtube"
         },
         "properties" : {
-          "id" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
           "title" : {
             "example" : "Lady Gaga - Poker Face (Official Music Video)",
             "type" : "string"
@@ -591,19 +626,17 @@
       },
       "Song" : {
         "example" : {
-          "id" : 0,
+          "id" : "id",
           "occurences" : [ {
             "thumbnail" : "https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg",
             "artist" : "Lady Gaga",
             "externalId" : "bESGLojNYSo",
-            "id" : 6,
             "title" : "Lady Gaga - Poker Face (Official Music Video)",
             "platform" : "youtube"
           }, {
             "thumbnail" : "https://i.ytimg.com/vi/bESGLojNYSo/hq720.jpg",
             "artist" : "Lady Gaga",
             "externalId" : "bESGLojNYSo",
-            "id" : 6,
             "title" : "Lady Gaga - Poker Face (Official Music Video)",
             "platform" : "youtube"
           } ],
@@ -611,8 +644,7 @@
         },
         "properties" : {
           "id" : {
-            "format" : "int64",
-            "type" : "integer"
+            "type" : "string"
           },
           "title" : {
             "example" : "Lady Gaga - Poker Face (Official Music Video)",
@@ -648,14 +680,14 @@
       },
       "PlayList" : {
         "example" : {
-          "songs" : [ 0, 0 ],
-          "id" : 43873,
+          "songs" : [ "songs", "songs" ],
+          "id" : "dfINx",
           "title" : "My playlist"
         },
         "properties" : {
           "id" : {
-            "example" : 43873,
-            "type" : "integer"
+            "example" : "dfINx",
+            "type" : "string"
           },
           "title" : {
             "example" : "My playlist",
@@ -663,7 +695,7 @@
           },
           "songs" : {
             "items" : {
-              "type" : "integer"
+              "type" : "string"
             },
             "type" : "array"
           }
@@ -684,7 +716,7 @@
       },
       "Party" : {
         "example" : {
-          "members" : [ 0, 0 ],
+          "members" : [ "members", "members" ],
           "name" : "Birthday",
           "id" : "22fed76bbf8e4f8d93f8eb204ea42167"
         },
@@ -700,7 +732,7 @@
           "members" : {
             "items" : {
               "description" : "userIds",
-              "type" : "integer"
+              "type" : "string"
             },
             "type" : "array"
           }
@@ -724,18 +756,6 @@
       }
     },
     "securitySchemes" : {
-      "songvoter_auth" : {
-        "flows" : {
-          "implicit" : {
-            "authorizationUrl" : "https://songvoter.coflnet.com/oauth/dialog",
-            "scopes" : {
-              "write:song" : "modify songs",
-              "read:song" : "read songs "
-            }
-          }
-        },
-        "type" : "oauth2"
-      },
       "jwt" : {
         "bearerFormat" : "JWT",
         "scheme" : "bearer",

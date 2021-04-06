@@ -30,7 +30,7 @@ namespace Coflnet.SongVoter.Models
         /// Gets or Sets Id
         /// </summary>
         [DataMember(Name="id", EmitDefaultValue=false)]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// Gets or Sets Title
@@ -42,7 +42,7 @@ namespace Coflnet.SongVoter.Models
         /// Gets or Sets Songs
         /// </summary>
         [DataMember(Name="songs", EmitDefaultValue=false)]
-        public List<int> Songs { get; set; }
+        public List<string> Songs { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -93,7 +93,7 @@ namespace Coflnet.SongVoter.Models
             return 
                 (
                     Id == other.Id ||
-                    
+                    Id != null &&
                     Id.Equals(other.Id)
                 ) && 
                 (
@@ -119,7 +119,7 @@ namespace Coflnet.SongVoter.Models
             {
                 var hashCode = 41;
                 // Suitable nullity checks etc, of course :)
-                    
+                    if (Id != null)
                     hashCode = hashCode * 59 + Id.GetHashCode();
                     if (Title != null)
                     hashCode = hashCode * 59 + Title.GetHashCode();

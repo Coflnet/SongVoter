@@ -36,6 +36,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="405">Invalid input</response>
         [HttpPost]
         [Route("/v1/songs")]
+        [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AddSong")]
@@ -65,9 +66,10 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="404">Song not found</response>
         [HttpGet]
         [Route("/v1/song/{songId}")]
+        [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetSongById")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "successful operation")]
-        public abstract Task<IActionResult> GetSongById([FromRoute (Name = "songId")][Required]long songId);
+        public abstract Task<IActionResult> GetSongById([FromRoute (Name = "songId")][Required]string songId);
     }
 }

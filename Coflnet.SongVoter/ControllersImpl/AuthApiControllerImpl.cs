@@ -12,6 +12,7 @@ using Google.Apis.Auth;
 using Coflnet.SongVoter.Middleware;
 using System.Linq;
 using System.Threading.Tasks;
+using Coflnet.SongVoter.Service;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -51,7 +52,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             permClaims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
             // userLevel
             permClaims.Add(new Claim("ul", "1"));
-            permClaims.Add(new Claim("uid", userId.ToString()));
+            permClaims.Add(new Claim("uid", IDService.Instance.ToHash(userId)));
 
             //Create Security Token object by giving required parameters    
             var token = new JwtSecurityToken(issuer, //Issure    

@@ -20,7 +20,6 @@ Coflnet.SongVoter/Models/Song.cs
 Coflnet.SongVoter/Models/SongCreation.cs
 Coflnet.SongVoter/OpenApi/TypeExtensions.cs
 Coflnet.SongVoter/Properties/launchSettings.json
-Coflnet.SongVoter/appsettings.json
 Coflnet.SongVoter/wwwroot/README.md
 Coflnet.SongVoter/wwwroot/index.html
 Coflnet.SongVoter/wwwroot/openapi-original.json

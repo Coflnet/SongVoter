@@ -36,6 +36,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="200">successful created list</response>
         [HttpPost]
         [Route("/v1/lists")]
+        [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("CreatePlaylist")]
@@ -50,10 +51,11 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="200">successful operation</response>
         [HttpGet]
         [Route("/v1/lists/{listId}")]
+        [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetListById")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        public abstract Task<IActionResult> GetListById([FromRoute (Name = "listId")][Required]long listId);
+        public abstract Task<IActionResult> GetListById([FromRoute (Name = "listId")][Required]string listId);
 
         /// <summary>
         /// Get playlist for active user
@@ -61,6 +63,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="200">successful response</response>
         [HttpGet]
         [Route("/v1/lists")]
+        [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetPlaylists")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<PlayList>), description: "successful response")]

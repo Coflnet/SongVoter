@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -7,23 +6,23 @@ using Coflnet.SongVoter.DBModels;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Google.Apis.YouTube.v3.Data;
 using Google.Apis.YouTube.v3;
-using System.Security.Cryptography.X509Certificates;
-using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using System.Collections.Generic;
 using SpotifyAPI.Web;
 using SimplerConfig;
+using Coflnet.SongVoter.Service;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
     public class SongApiControllerImpl : SongApiController
     {
         private readonly SVContext db;
+        private IDService idService;
         public SongApiControllerImpl(SVContext data)
         {
             this.db = data;
+            idService = IDService.Instance;
         }
 
         public override async Task<IActionResult> AddSong([FromBody] SongCreation body)
@@ -112,19 +111,20 @@ namespace Coflnet.SongVoter.Controllers.Impl
             return Ok(DBToApiSong(db));
         }
 
-        public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] long songId)
+        public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
         {
+            var numericalId = idService.FromHash(songId);
             var db = await this.db
-                .Songs.Where(s => s.Id == songId).FirstOrDefaultAsync();
+                .Songs.Where(s => s.Id == numericalId).FirstOrDefaultAsync();
 
             return base.Ok(DBToApiSong(db));
         }
 
-        private static Models.Song DBToApiSong(DBModels.Song db)
+        private Models.Song DBToApiSong(DBModels.Song db)
         {
             return new Models.Song()
             {
-                Id = db.Id,
+                Id = idService.ToHash(db.Id),
                 Title = db.Title,
                 Occurences = db.ExternalSongs.Select(s => new Models.ExternalSong()
                 {

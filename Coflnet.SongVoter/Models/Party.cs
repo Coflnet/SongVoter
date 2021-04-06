@@ -42,7 +42,7 @@ namespace Coflnet.SongVoter.Models
         /// Gets or Sets Members
         /// </summary>
         [DataMember(Name="members", EmitDefaultValue=false)]
-        public List<int> Members { get; set; }
+        public List<string> Members { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
