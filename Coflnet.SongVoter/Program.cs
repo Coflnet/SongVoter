@@ -1,4 +1,5 @@
 using System;
+using Coflnet.SongVoter.Controllers.Impl;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -16,6 +17,7 @@ namespace Coflnet.SongVoter
         public static void Main(string[] args)
         {
             SimplerConfig.SConfig.Instance.StartArgs = args;
+            Console.WriteLine($"Token for root user {AuthApiControllerImpl.CreateTokenFor(0)}");
             CreateHostBuilder(args).Build().Run();
         }
 

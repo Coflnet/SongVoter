@@ -36,10 +36,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 userId = user.Id;
             }
 
-            return CreateTokenFor(userId);
+            return Ok(new { token = CreateTokenFor(userId)});
         }
 
-        private IActionResult CreateTokenFor(int userId)
+        public static string CreateTokenFor(int userId)
         {
             string key = SimplerConfig.Config.Instance["jwt:secret"]; //Secret key which will be used later during validation    
             var issuer = "http://mysite.com"; //normally this will be your site URL    
@@ -61,7 +61,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: credentials);
             var jwt_token = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(new { token = jwt_token });
+            return jwt_token;
         }
 
         public static GoogleJsonWebSignature.Payload ValidateToken(string token)

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using SpotifyAPI.Web;
 using SimplerConfig;
 using Coflnet.SongVoter.Service;
+using Coflnet.SongVoter.Middleware;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -27,14 +28,15 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         public override async Task<IActionResult> AddSong([FromBody] SongCreation body)
         {
-            // TODO: check if they already exist
+            if(db.ExternalSong.Where(s=>s.ExternalId == body.ExternalId).Any())
+                return StatusCode(409,"Song already exists");
             IEnumerable<DBModels.Song> songs;
             if (body.Platform == SongCreation.PlatformEnum.SpotifyEnum)
                 songs = new DBModels.Song[] { await GetSongFromSpotify() };
             else if (body.Platform == SongCreation.PlatformEnum.YoutubeEnum)
                 songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId });
             else
-                throw new APIException("You provided an unkown platform");
+                throw new ApiException(System.Net.HttpStatusCode.BadRequest,"The field `platform` in your request is invalid");
 
             foreach (var song in songs)
             {
@@ -42,7 +44,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             }
             await db.SaveChangesAsync();
 
-            return Ok(songs);
+            return Ok(DBToApiSong(songs.First()));
         }
 
         private static async Task<DBModels.Song> GetSongFromSpotify()
