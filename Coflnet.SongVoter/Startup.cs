@@ -100,7 +100,7 @@ namespace Coflnet.SongVoter
                     c.CustomSchemaIds(type => type.FriendlyId(true));
                     c.IncludeXmlComments($"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{Assembly.GetEntryAssembly().GetName().Name}.xml");
                     // Sets the basePath property in the OpenAPI document generated
-                    c.DocumentFilter<BasePathFilter>("/v1");
+                    //c.DocumentFilter<BasePathFilter>("/v1");
 
                     // Include DataAnnotation attributes on Controller Action parameters as OpenAPI validation rules (e.g required, pattern, ..)
                     // Use [ValidateModelState] on Actions to actually validate it in C# as well!

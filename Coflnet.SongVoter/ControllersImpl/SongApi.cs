@@ -107,17 +107,22 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         public override async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
         {
-            var db = await this.db
-                .Songs.Where(s => s.Title.StartsWith(term)).FirstOrDefaultAsync();
+            var songs = await this.db
+                .Songs.Where(s => s.Title.StartsWith(term))
+                .Include(s=>s.ExternalSongs)
+                .Take(20)
+                .ToListAsync();
 
-            return Ok(DBToApiSong(db));
+            return Ok(songs.Select(DBToApiSong));
         }
 
         public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
         {
             var numericalId = idService.FromHash(songId);
             var db = await this.db
-                .Songs.Where(s => s.Id == numericalId).FirstOrDefaultAsync();
+                .Songs.Where(s => s.Id == numericalId)
+                .Include(s=>s.ExternalSongs)
+                .FirstOrDefaultAsync();
 
             return base.Ok(DBToApiSong(db));
         }

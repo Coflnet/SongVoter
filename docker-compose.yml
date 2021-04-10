@@ -1,0 +1,36 @@
+version: "3"
+services:
+  songvoter:
+    build: .
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    networks:
+      - proxy
+      - songvoter
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.songvoter.entrypoints=http"
+      - "traefik.http.routers.songvoter.rule=Host(`${SV_DOMAIN}`)"
+      - "traefik.http.routers.traefik.middlewares=https-redirect@file"
+      - "traefik.http.routers.songvoter-secure.entrypoints=https"
+      - "traefik.http.routers.songvoter-secure.rule=Host(`${SV_DOMAIN}`)"
+      - "traefik.http.routers.songvoter-secure.tls=true"
+      - "traefik.http.routers.songvoter-secure.tls.certresolver=http"
+      - "traefik.http.routers.songvoter-secure.service=songvoter"
+      - "traefik.http.services.songvoter.loadbalancer.server.port=4200"
+      - "traefik.docker.network=proxy"
+  devdb:
+    image: 'docker.io/bitnami/mariadb:10.3-debian-10'
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+    volumes:
+      - './mariadb_data:/bitnami'
+    networks:
+      - songvoter
+
+networks:
+  songvoter:
+  proxy:
+    external: true
