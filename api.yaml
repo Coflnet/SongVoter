@@ -302,7 +302,12 @@ paths:
             type: string
       responses:
         "200":
-          description: invite created
+          description: invite link created
+          content:
+            "*/*":
+              schema:
+                type: string
+                example: "https://songvoter.party/invite/linkIdtoForward"
       security:
         - jwt: []
   "/party/{partyId}/nextSong":

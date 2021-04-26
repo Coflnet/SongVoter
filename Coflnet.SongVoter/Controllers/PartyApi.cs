@@ -33,12 +33,13 @@ namespace Coflnet.SongVoter.Controllers
         /// Creates an invite link for a party
         /// </summary>
         /// <param name="partyId">ID of party to invite to</param>
-        /// <response code="200">invite created</response>
+        /// <response code="200">invite link created</response>
         [HttpGet]
         [Route("/v1/party/{partyId}/inviteLink")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("CreateInviteLink")]
+        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "invite link created")]
         public abstract Task<IActionResult> CreateInviteLink([FromRoute (Name = "partyId")][Required]string partyId);
 
         /// <summary>

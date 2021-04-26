@@ -13,6 +13,7 @@ using SpotifyAPI.Web;
 using SimplerConfig;
 using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Middleware;
+using Coflnet.SongVoter.Transformers;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -28,7 +29,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         public override async Task<IActionResult> AddSong([FromBody] SongCreation body)
         {
-            if(db.ExternalSong.Where(s=>s.ExternalId == body.ExternalId).Any())
+            if(db.ExternalSongs.Where(s=>s.ExternalId == body.ExternalId).Any())
                 return StatusCode(409,"Song already exists");
             IEnumerable<DBModels.Song> songs;
             if (body.Platform == SongCreation.PlatformEnum.SpotifyEnum)
@@ -44,7 +45,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             }
             await db.SaveChangesAsync();
 
-            return Ok(DBToApiSong(songs.First()));
+            return Ok(songs.First().ToApiSong());
         }
 
         private static async Task<DBModels.Song> GetSongFromSpotify()
@@ -113,7 +114,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 .Take(20)
                 .ToListAsync();
 
-            return Ok(songs.Select(DBToApiSong));
+            return Ok(songs.Select(s=>s.ToApiSong()));
         }
 
         public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
@@ -124,24 +125,9 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 .Include(s=>s.ExternalSongs)
                 .FirstOrDefaultAsync();
 
-            return base.Ok(DBToApiSong(db));
+            return base.Ok(db.ToApiSong());
         }
 
-        private Models.Song DBToApiSong(DBModels.Song db)
-        {
-            return new Models.Song()
-            {
-                Id = idService.ToHash(db.Id),
-                Title = db.Title,
-                Occurences = db.ExternalSongs.Select(s => new Models.ExternalSong()
-                {
-                    Artist = s.Artist,
-                    ExternalId = s.ExternalId,
-                    Platform = (Models.ExternalSong.PlatformEnum)s.Platform,
-                    Thumbnail = s.ThumbnailUrl,
-                    Title = s.Title
-                }).ToList()
-            };
-        }
+       
     }
 }

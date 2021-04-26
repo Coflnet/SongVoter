@@ -24,10 +24,11 @@
 build.bat
 build.sh
 .sln
-src/.csproj
-src/Dockerfile
+Dockerfile
 Coflnet.SongVoter/Program.cs
 Coflnet.SongVoter/Startup.cs
+Coflnet.SongVoter/Dockerfile
 Coflnet.SongVoter/Coflnet.SongVoter.csproj
 Coflnet.SongVoter/Coflnet.SongVoter.sln
 Coflnet.SongVoter/appsettings.json
+Coflnet.SongVoter.sln

@@ -442,7 +442,15 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "invite created"
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "example" : "https://songvoter.party/invite/linkIdtoForward",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "invite link created"
           }
         },
         "security" : [ {

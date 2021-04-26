@@ -1,4 +1,3 @@
-Coflnet.SongVoter.sln
 Coflnet.SongVoter/.gitignore
 Coflnet.SongVoter/Attributes/ValidateModelStateAttribute.cs
 Coflnet.SongVoter/Authentication/ApiAuthentication.cs

@@ -37,7 +37,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         private long GetUserId()
         {
-            return iDService.FromHash(this.User.Claims.Where(c => c.Type == "uid").First().Value);
+            return iDService.UserId(this);
         }
 
         public override async Task<IActionResult> GetListById([FromRoute(Name = "listId"), Required] string listId)
