@@ -20,9 +20,18 @@ namespace Coflnet.SongVoter.DBModels
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<PartySong>()
-                .HasOne<Party>("partyId");
+                .HasMany(s => s.DownVoters)
+                .WithMany(p => p.Downvotes);
             modelBuilder.Entity<PartySong>()
-                .HasOne<Song>("songId");
+                .HasMany(s => s.UpVoters)
+                .WithMany(p => p.Upvotes);
+
+            modelBuilder.Entity<Party>()
+                .HasOne(u => u.Creator);
+
+            modelBuilder.Entity<Party>()
+                .HasMany(p => p.Members)
+                .WithMany(u => u.Parties);
         }
     }
 }
