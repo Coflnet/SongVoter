@@ -13,6 +13,7 @@ using Coflnet.SongVoter.Middleware;
 using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -52,10 +53,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
         {
             var savedToken = SimplerConfig.Config.Instance["test:authtoken"];
             Console.WriteLine("Creating token for test user " + savedToken);
-            if(string.IsNullOrEmpty(savedToken))
+            if (string.IsNullOrEmpty(savedToken))
                 return this.Problem("test mode not active, please set test:authtoken");
 
-            if(savedToken != token.Token)
+            if (savedToken != token.Token)
                 return this.Problem("invalid token passed");
 
 
@@ -66,6 +67,41 @@ namespace Coflnet.SongVoter.Controllers.Impl
             };
 
             return await GetTokenForUser(payload);
+        }
+
+        [HttpDelete]
+        [Route("/v1/db")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> Drop([FromBody] AuthToken token)
+        {
+            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            Console.WriteLine("Attempt to drop db");
+            if (string.IsNullOrEmpty(savedToken))
+                return this.Problem("please set db:authtoken");
+
+            if (savedToken != token.Token)
+                return this.Problem("invalid token passed");
+
+            db.Database.EnsureDeleted();
+
+            return Ok("dropped I hope you are not evil");
+        }
+
+        [HttpPost]
+        [Route("/v1/db")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> MigrateDb([FromBody] AuthToken token)
+        {
+            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            if (string.IsNullOrEmpty(savedToken))
+                return this.Problem("please set db:authtoken");
+
+            if (savedToken != token.Token)
+                return this.Problem("invalid token passed");
+
+            db.Database.Migrate();
+
+            return Ok("migrated");
         }
 
         public static string CreateTokenFor(int userId)
@@ -102,9 +138,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 var tokenData = client.Result;
                 Console.WriteLine("google user: " + tokenData.Name);
                 return tokenData;
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
-                throw new ApiException(System.Net.HttpStatusCode.InternalServerError,$"{e.InnerException.Message}");
+                throw new ApiException(System.Net.HttpStatusCode.InternalServerError, $"{e.InnerException.Message}");
             }
 
         }
