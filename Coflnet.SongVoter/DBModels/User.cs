@@ -10,6 +10,10 @@ namespace Coflnet.SongVoter.DBModels
         public string Name { get; set; }
         public string GoogleId { get; set; }
 
+        public ICollection<PartySong> Upvotes {get;set;}
+        public ICollection<PartySong> Downvotes {get;set;}
+        public ICollection<Party> Parties {get;set;}
+
         public override bool Equals(object obj)
         {
             return obj is User user &&

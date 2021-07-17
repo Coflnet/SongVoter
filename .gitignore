@@ -1,3 +1,6 @@
 Coflnet.SongVoter/custom.conf.json
 .env
 mariadb_data/
+**/node_modules
+tests/cypress/videos/
+tests/cypress/screenshots

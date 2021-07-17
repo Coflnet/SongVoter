@@ -13,6 +13,7 @@ using Coflnet.SongVoter.Middleware;
 using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Service;
+using Microsoft.EntityFrameworkCore;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -27,16 +28,80 @@ namespace Coflnet.SongVoter.Controllers.Impl
         public override async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
         {
             var data = ValidateToken(authToken.Token);
+            return await GetTokenForUser(data);
+        }
+
+        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data)
+        {
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
             if (userId == 0)
             {
                 var user = new User() { GoogleId = data.Subject, Name = data.Name };
                 db.Add(user);
-                await db.SaveChangesAsync ();
+                await db.SaveChangesAsync();
                 userId = user.Id;
             }
 
-            return Ok(new { token = CreateTokenFor(userId)});
+            return Ok(new { token = CreateTokenFor(userId) });
+        }
+
+
+        [HttpPost]
+        [Route("/v1/auth/test")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
+        {
+            var savedToken = SimplerConfig.Config.Instance["test:authtoken"];
+            Console.WriteLine("Creating token for test user " + savedToken);
+            if (string.IsNullOrEmpty(savedToken))
+                return this.Problem("test mode not active, please set test:authtoken");
+
+            if (savedToken != token.Token)
+                return this.Problem("invalid token passed");
+
+
+            var payload = new GoogleJsonWebSignature.Payload()
+            {
+                Subject = "2",
+                Name = "testUser"
+            };
+
+            return await GetTokenForUser(payload);
+        }
+
+        [HttpDelete]
+        [Route("/v1/db")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> Drop([FromBody] AuthToken token)
+        {
+            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            Console.WriteLine("Attempt to drop db");
+            if (string.IsNullOrEmpty(savedToken))
+                return this.Problem("please set db:authtoken");
+
+            if (savedToken != token.Token)
+                return this.Problem("invalid token passed");
+
+            db.Database.EnsureDeleted();
+
+            return Ok("dropped I hope you are not evil");
+        }
+
+        [HttpPost]
+        [Route("/v1/db")]
+        [Consumes("application/json")]
+        public async Task<IActionResult> MigrateDb([FromBody] AuthToken token)
+        {
+            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            if (string.IsNullOrEmpty(savedToken))
+                return this.Problem("please set db:authtoken");
+
+            if (savedToken != token.Token)
+                return this.Problem("invalid token passed");
+
+            db.Database.Migrate();
+
+            return Ok("migrated");
         }
 
         public static string CreateTokenFor(int userId)
@@ -73,9 +138,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 var tokenData = client.Result;
                 Console.WriteLine("google user: " + tokenData.Name);
                 return tokenData;
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
-                throw new ApiException(System.Net.HttpStatusCode.InternalServerError,$"{e.InnerException.Message}");
+                throw new ApiException(System.Net.HttpStatusCode.InternalServerError, $"{e.InnerException.Message}");
             }
 
         }
