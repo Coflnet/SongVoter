@@ -18,6 +18,7 @@ COPY ["/Coflnet.SongVoter/", "Coflnet.SongVoter/"]
 
 # Build the API
 WORKDIR "Coflnet.SongVoter"
+RUN if test ! -f  \"custom.conf.json\"; then echo {} > custom.conf.json; fi
 RUN dotnet build "Coflnet.SongVoter.csproj" -c Release -o /app/build
 
 # Publish it
