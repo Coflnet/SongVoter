@@ -24,7 +24,6 @@ using Newtonsoft.Json.Serialization;
 using Coflnet.SongVoter.Authentication;
 using Coflnet.SongVoter.Filters;
 using Coflnet.SongVoter.OpenApi;
-using SimplerConfig;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -32,6 +31,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Middleware;
+using Coflnet.SongVoter.Transformers;
+using Coflnet.SongVoter.Service;
 
 namespace Coflnet.SongVoter
 {
@@ -110,7 +111,7 @@ namespace Coflnet.SongVoter
                 .AddSwaggerGenNewtonsoftSupport();
 
 
-            string key = SimplerConfig.Config.Instance["jwt:secret"]; //this should be same which is used while creating token      
+            string key = Configuration["jwt:secret"]; //this should be same which is used while creating token      
             var issuer = "http://mysite.com"; //this should be same which is used while creating token  
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -140,10 +141,13 @@ namespace Coflnet.SongVoter
                 });
 
             services.AddDbContextPool<DBModels.SVContext>(options =>
-                options.UseMySql(Config.Instance["DefaultConnection"], ServerVersion.AutoDetect(Config.Instance["DefaultConnection"]), options =>
-                {
-                    options.EnableRetryOnFailure();
-                }));
+            {
+                options.UseNpgsql(@"host=localhost;database=postgres;user id=postgres;password=;");
+            });
+            services.AddSingleton<SongTransformer>();
+            services.AddSingleton<IDService>();
+
+            Console.WriteLine("registered all");
         }
 
         /// <summary>
@@ -172,7 +176,7 @@ namespace Coflnet.SongVoter
                 .UseSwaggerUI(c =>
                 {
                     // set route prefix to openapi, e.g. http://localhost:8080/openapi/index.html
-                    c.RoutePrefix = "openapi";
+                    c.RoutePrefix = "api";
                     //TODO: Either use the SwaggerGen generated OpenAPI contract (generated from C# classes)
                     c.SwaggerEndpoint("/openapi/0.0.1/openapi.json", "Songvoter");
 

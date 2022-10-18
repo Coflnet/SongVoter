@@ -1,43 +1,111 @@
 ﻿using System;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
 
 namespace Coflnet.SongVoter.Migrations
 {
-    public partial class invite : Migration
+    public partial class initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ExternalSong_Songs_SongId",
-                table: "ExternalSong");
+            migrationBuilder.CreateTable(
+                name: "PlayLists",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Owner = table.Column<int>(type: "integer", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlayLists", x => x.Id);
+                });
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_ExternalSong",
-                table: "ExternalSong");
+            migrationBuilder.CreateTable(
+                name: "Songs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Songs", x => x.Id);
+                });
 
-            migrationBuilder.RenameTable(
-                name: "ExternalSong",
-                newName: "ExternalSongs");
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "text", nullable: true),
+                    GoogleId = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
 
-            migrationBuilder.RenameIndex(
-                name: "IX_ExternalSong_SongId",
-                table: "ExternalSongs",
-                newName: "IX_ExternalSongs_SongId");
+            migrationBuilder.CreateTable(
+                name: "ExternalSongs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Platform = table.Column<int>(type: "integer", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: true),
+                    Artist = table.Column<string>(type: "text", nullable: true),
+                    ThumbnailUrl = table.Column<string>(type: "text", nullable: true),
+                    ExternalId = table.Column<string>(type: "text", nullable: true),
+                    SongId = table.Column<int>(type: "integer", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExternalSongs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ExternalSongs_Songs_SongId",
+                        column: x => x.SongId,
+                        principalTable: "Songs",
+                        principalColumn: "Id");
+                });
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_ExternalSongs",
-                table: "ExternalSongs",
-                column: "Id");
+            migrationBuilder.CreateTable(
+                name: "PlaylistSong",
+                columns: table => new
+                {
+                    PlaylistsId = table.Column<int>(type: "integer", nullable: false),
+                    SongsId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlaylistSong", x => new { x.PlaylistsId, x.SongsId });
+                    table.ForeignKey(
+                        name: "FK_PlaylistSong_PlayLists_PlaylistsId",
+                        column: x => x.PlaylistsId,
+                        principalTable: "PlayLists",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PlaylistSong_Songs_SongsId",
+                        column: x => x.SongsId,
+                        principalTable: "Songs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
 
             migrationBuilder.CreateTable(
                 name: "Parties",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    CreatorId = table.Column<int>(type: "int", nullable: true),
-                    Name = table.Column<string>(type: "varchar(30) CHARACTER SET utf8mb4", maxLength: 30, nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    CreatorId = table.Column<int>(type: "integer", nullable: true),
+                    Name = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -46,20 +114,19 @@ namespace Coflnet.SongVoter.Migrations
                         name: "FK_Parties_Users_CreatorId",
                         column: x => x.CreatorId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "Invites",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    PartyId = table.Column<int>(type: "int", nullable: true),
-                    UserId = table.Column<int>(type: "int", nullable: true),
-                    CreatorId = table.Column<int>(type: "int", nullable: false),
-                    ValidUntil = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PartyId = table.Column<int>(type: "integer", nullable: true),
+                    UserId = table.Column<int>(type: "integer", nullable: true),
+                    CreatorId = table.Column<int>(type: "integer", nullable: false),
+                    ValidUntil = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -68,14 +135,12 @@ namespace Coflnet.SongVoter.Migrations
                         name: "FK_Invites_Parties_PartyId",
                         column: x => x.PartyId,
                         principalTable: "Parties",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Invites_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -83,10 +148,10 @@ namespace Coflnet.SongVoter.Migrations
                 columns: table => new
                 {
                     Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    PartyId = table.Column<int>(type: "int", nullable: false),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PartyId = table.Column<int>(type: "integer", nullable: false),
                     PlayedTimes = table.Column<short>(type: "smallint", nullable: false),
-                    SongId = table.Column<int>(type: "int", nullable: false)
+                    SongId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -109,8 +174,8 @@ namespace Coflnet.SongVoter.Migrations
                 name: "PartyUser",
                 columns: table => new
                 {
-                    MembersId = table.Column<int>(type: "int", nullable: false),
-                    PartiesId = table.Column<int>(type: "int", nullable: false)
+                    MembersId = table.Column<int>(type: "integer", nullable: false),
+                    PartiesId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -133,7 +198,7 @@ namespace Coflnet.SongVoter.Migrations
                 name: "PartySongUser",
                 columns: table => new
                 {
-                    DownVotersId = table.Column<int>(type: "int", nullable: false),
+                    DownVotersId = table.Column<int>(type: "integer", nullable: false),
                     DownvotesId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
@@ -157,7 +222,7 @@ namespace Coflnet.SongVoter.Migrations
                 name: "PartySongUser1",
                 columns: table => new
                 {
-                    UpVotersId = table.Column<int>(type: "int", nullable: false),
+                    UpVotersId = table.Column<int>(type: "integer", nullable: false),
                     UpvotesId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
@@ -176,6 +241,11 @@ namespace Coflnet.SongVoter.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ExternalSongs_SongId",
+                table: "ExternalSongs",
+                column: "SongId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invites_PartyId",
@@ -217,20 +287,16 @@ namespace Coflnet.SongVoter.Migrations
                 table: "PartyUser",
                 column: "PartiesId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_ExternalSongs_Songs_SongId",
-                table: "ExternalSongs",
-                column: "SongId",
-                principalTable: "Songs",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            migrationBuilder.CreateIndex(
+                name: "IX_PlaylistSong_SongsId",
+                table: "PlaylistSong",
+                column: "SongsId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ExternalSongs_Songs_SongId",
-                table: "ExternalSongs");
+            migrationBuilder.DropTable(
+                name: "ExternalSongs");
 
             migrationBuilder.DropTable(
                 name: "Invites");
@@ -245,36 +311,22 @@ namespace Coflnet.SongVoter.Migrations
                 name: "PartyUser");
 
             migrationBuilder.DropTable(
+                name: "PlaylistSong");
+
+            migrationBuilder.DropTable(
                 name: "PartySongs");
+
+            migrationBuilder.DropTable(
+                name: "PlayLists");
 
             migrationBuilder.DropTable(
                 name: "Parties");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_ExternalSongs",
-                table: "ExternalSongs");
+            migrationBuilder.DropTable(
+                name: "Songs");
 
-            migrationBuilder.RenameTable(
-                name: "ExternalSongs",
-                newName: "ExternalSong");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_ExternalSongs_SongId",
-                table: "ExternalSong",
-                newName: "IX_ExternalSong_SongId");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_ExternalSong",
-                table: "ExternalSong",
-                column: "Id");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ExternalSong_Songs_SongId",
-                table: "ExternalSong",
-                column: "SongId",
-                principalTable: "Songs",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

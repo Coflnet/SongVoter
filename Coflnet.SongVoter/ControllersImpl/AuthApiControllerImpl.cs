@@ -14,15 +14,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Service;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
     public class AuthApiControllerImpl : AuthApiController
     {
         private readonly SVContext db;
-        public AuthApiControllerImpl(SVContext data)
+        private readonly IConfiguration config;
+        private readonly IDService idService;
+        public AuthApiControllerImpl(SVContext data, IConfiguration config, IDService idService)
         {
             this.db = data;
+            this.config = config;
+            this.idService = idService;
+            Console.WriteLine($"Token for root user {CreateTokenFor(0)}");
         }
 
         public override async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
@@ -51,7 +57,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
         [Consumes("application/json")]
         public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
         {
-            var savedToken = SimplerConfig.Config.Instance["test:authtoken"];
+            var savedToken = config["test:authtoken"];
             Console.WriteLine("Creating token for test user " + savedToken);
             if (string.IsNullOrEmpty(savedToken))
                 return this.Problem("test mode not active, please set test:authtoken");
@@ -74,7 +80,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
         [Consumes("application/json")]
         public async Task<IActionResult> Drop([FromBody] AuthToken token)
         {
-            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            var savedToken = config["db:authtoken"];
             Console.WriteLine("Attempt to drop db");
             if (string.IsNullOrEmpty(savedToken))
                 return this.Problem("please set db:authtoken");
@@ -92,7 +98,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
         [Consumes("application/json")]
         public async Task<IActionResult> MigrateDb([FromBody] AuthToken token)
         {
-            var savedToken = SimplerConfig.Config.Instance["db:authtoken"];
+            var savedToken = config["db:authtoken"];
             if (string.IsNullOrEmpty(savedToken))
                 return this.Problem("please set db:authtoken");
 
@@ -104,9 +110,9 @@ namespace Coflnet.SongVoter.Controllers.Impl
             return Ok("migrated");
         }
 
-        public static string CreateTokenFor(int userId)
+        private string CreateTokenFor(int userId)
         {
-            string key = SimplerConfig.Config.Instance["jwt:secret"]; //Secret key which will be used later during validation    
+            string key = config["jwt:secret"]; //Secret key which will be used later during validation    
             var issuer = "http://mysite.com"; //normally this will be your site URL    
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
@@ -117,7 +123,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
             permClaims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
             // userLevel
             permClaims.Add(new Claim("ul", "1"));
-            permClaims.Add(new Claim("uid", IDService.Instance.ToHash(userId)));
+            permClaims.Add(new Claim("uid", idService.ToHash(userId)));
 
             //Create Security Token object by giving required parameters    
             var token = new JwtSecurityToken(issuer, //Issure    

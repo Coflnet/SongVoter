@@ -14,10 +14,10 @@ namespace Coflnet.SongVoter.Controllers.Impl
         private SVContext db;
         private IDService iDService;
 
-        public ListApiControllerImpl(SVContext db)
+        public ListApiControllerImpl(SVContext db, IDService idService)
         {
             this.db = db;
-            iDService = IDService.Instance;
+            iDService = idService;
         }
 
 

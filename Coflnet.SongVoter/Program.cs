@@ -16,8 +16,6 @@ namespace Coflnet.SongVoter
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
-            SimplerConfig.SConfig.Instance.StartArgs = args;
-            Console.WriteLine($"Token for root user {AuthApiControllerImpl.CreateTokenFor(0)}");
             CreateHostBuilder(args).Build().Run();
         }
 

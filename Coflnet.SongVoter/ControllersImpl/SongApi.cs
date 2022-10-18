@@ -10,10 +10,10 @@ using Google.Apis.YouTube.v3;
 using Google.Apis.Services;
 using System.Collections.Generic;
 using SpotifyAPI.Web;
-using SimplerConfig;
 using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Middleware;
 using Coflnet.SongVoter.Transformers;
+using Microsoft.Extensions.Configuration;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
@@ -21,10 +21,14 @@ namespace Coflnet.SongVoter.Controllers.Impl
     {
         private readonly SVContext db;
         private IDService idService;
-        public SongApiControllerImpl(SVContext data)
+        private IConfiguration config;
+        private SongTransformer transformer;
+        public SongApiControllerImpl(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer)
         {
             this.db = data;
-            idService = IDService.Instance;
+            idService = iDService;
+            this.config = config;
+            this.transformer = transformer;
         }
 
         public override async Task<IActionResult> AddSong([FromBody] SongCreation body)
@@ -45,14 +49,14 @@ namespace Coflnet.SongVoter.Controllers.Impl
             }
             await db.SaveChangesAsync();
 
-            return Ok(songs.First().ToApiSong());
+            return Ok(transformer.ToApiSong(songs.First()));
         }
 
-        private static async Task<DBModels.Song> GetSongFromSpotify()
+        private async Task<DBModels.Song> GetSongFromSpotify()
         {
             var config = SpotifyClientConfig
                           .CreateDefault()
-                          .WithAuthenticator(new ClientCredentialsAuthenticator(SConfig.Instance["spotify:appid"], SConfig.Instance["spotify:secret"]));
+                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:appid"], this.config["spotify:secret"]));
             var spotify = new SpotifyClient(config);
 
             var track = await spotify.Tracks.Get("1sgKE7YUAhGDLNUU1ByEWu");
@@ -72,12 +76,12 @@ namespace Coflnet.SongVoter.Controllers.Impl
             }; ;
         }
 
-        private static async Task<IEnumerable<DBModels.Song>> GetSongDetailsFromYoutube(IEnumerable<string> ids)
+        private async Task<IEnumerable<DBModels.Song>> GetSongDetailsFromYoutube(IEnumerable<string> ids)
         {
             var yt = new YouTubeService(
                         new BaseClientService.Initializer()
                         {
-                            ApiKey = SConfig.Instance["youtube:apiKey"]
+                            ApiKey = config["youtube:apiKey"]
                         });
 
 
@@ -114,7 +118,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 .Take(20)
                 .ToListAsync();
 
-            return Ok(songs.Select(s=>s.ToApiSong()));
+            return Ok(songs.Select(s=>transformer.ToApiSong(s)));
         }
 
         public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
@@ -125,7 +129,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
                 .Include(s=>s.ExternalSongs)
                 .FirstOrDefaultAsync();
 
-            return base.Ok(db.ToApiSong());
+            return base.Ok(transformer.ToApiSong(db));
         }
 
        

@@ -1,14 +1,20 @@
 using System.Linq;
 using HashidsNet;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace Coflnet.SongVoter.Service
 {
     public class IDService
     {
-        Hashids hasher = new Hashids(SimplerConfig.SConfig.Instance["hashids:salt"]);
+        private IConfiguration config;
+        Hashids hasher;
 
-        public static IDService Instance = new IDService();
+        public IDService(IConfiguration config)
+        {
+            this.config = config;
+            hasher = new Hashids(config["hashids:salt"]);
+        }
 
         public long FromHash(string hash)
         {

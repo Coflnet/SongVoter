@@ -14,10 +14,12 @@ namespace Coflnet.SongVoter.Controllers.Impl
     {
         private readonly SVContext db;
         private IDService idService;
-        public PartyApiControllerImpl(SVContext data)
+        private SongTransformer songTransformer;
+        public PartyApiControllerImpl(SVContext data, IDService idService, SongTransformer songTransformer)
         {
             this.db = data;
-            idService = IDService.Instance;
+            this.idService = idService;
+            this.songTransformer = songTransformer;
         }
 
         public override async Task<IActionResult> CreateInviteLink([FromRoute(Name = "partyId"), Required] string partyId)
@@ -165,16 +167,16 @@ namespace Coflnet.SongVoter.Controllers.Impl
             var next = await db.PartySongs.Where(ps => ps.Id == pId)
                                 .Include(ps => ps.DownVoters)
                                 .Include(ps => ps.UpVoters)
-                                .OrderByDescending(ps => 1+ ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
-                                .Select(ps=>ps.Song)
+                                .OrderByDescending(ps => 1 + ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
+                                .Select(ps => ps.Song)
                                 .FirstOrDefaultAsync();
-            return Ok(next.ToApiSong());
+            return Ok(songTransformer.ToApiSong(next));
         }
 
         public override async Task<IActionResult> ResetParty([FromRoute(Name = "partyId"), Required] string partyId)
         {
             var pId = idService.FromHash(partyId);
-            foreach (var item in db.PartySongs.Where(ps=>ps.Id == pId))
+            foreach (var item in db.PartySongs.Where(ps => ps.Id == pId))
             {
                 item.PlayedTimes = 0;
             }

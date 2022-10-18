@@ -3,13 +3,20 @@ using Coflnet.SongVoter.Service;
 
 namespace Coflnet.SongVoter.Transformers
 {
-    public static class SongTransformer
+    public class SongTransformer
     {
-         public static Models.Song ToApiSong(this DBModels.Song db)
+        private IDService iDService;
+
+        public SongTransformer(IDService iDService)
+        {
+            this.iDService = iDService;
+        }
+
+        public Models.Song ToApiSong(DBModels.Song db)
         {
             return new Models.Song()
             {
-                Id = IDService.Instance.ToHash(db.Id),
+                Id = iDService.ToHash(db.Id),
                 Title = db.Title,
                 Occurences = db.ExternalSongs.Select(s => new Models.ExternalSong()
                 {
