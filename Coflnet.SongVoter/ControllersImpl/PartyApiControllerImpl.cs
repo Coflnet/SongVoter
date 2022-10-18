@@ -73,7 +73,7 @@ namespace Coflnet.SongVoter.Controllers.Impl
 
         private async Task<User> CurrentUser()
         {
-            return await db.Users.FindAsync(idService.UserId(this));
+            return await db.Users.FindAsync((int)idService.UserId(this));
         }
 
         private async Task<PartySong> GetOrCreatePartySong(string partyId, string songId)
