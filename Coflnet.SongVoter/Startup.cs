@@ -142,7 +142,7 @@ namespace Coflnet.SongVoter
 
             services.AddDbContextPool<DBModels.SVContext>(options =>
             {
-                options.UseNpgsql(@"host=localhost;database=postgres;user id=postgres;password=;");
+                options.UseNpgsql(Configuration["DB_CONNECTION"]);
             });
             services.AddSingleton<SongTransformer>();
             services.AddSingleton<IDService>();
