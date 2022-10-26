@@ -166,9 +166,6 @@ namespace Coflnet.SongVoter
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
             app.UseSwagger(c =>
                 {
                     c.RouteTemplate = "openapi/{documentName}/openapi.json";

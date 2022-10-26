@@ -21,8 +21,6 @@ namespace Coflnet.SongVoter
             Slug = slug;
         }
 
-        
-
         public static implicit operator string(Scope s) => s.Slug;
 
         public override bool Equals(object obj)

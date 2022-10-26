@@ -10,11 +10,11 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 # Copy the code into the container
 WORKDIR /
-COPY ["/Coflnet.SongVoter/Coflnet.SongVoter.csproj", "Coflnet.SongVoter/"]
+COPY ["Coflnet.SongVoter.csproj", "Coflnet.SongVoter/"]
 
 # NuGet restore
 RUN dotnet restore "Coflnet.SongVoter/Coflnet.SongVoter.csproj"
-COPY ["/Coflnet.SongVoter/", "Coflnet.SongVoter/"]
+COPY [".", "Coflnet.SongVoter/"]
 
 # Build the API
 WORKDIR "/Coflnet.SongVoter"

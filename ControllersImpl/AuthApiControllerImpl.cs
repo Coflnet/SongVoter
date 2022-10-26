@@ -15,10 +15,14 @@ using System.Threading.Tasks;
 using Coflnet.SongVoter.Service;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Swashbuckle.AspNetCore.Annotations;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Newtonsoft.Json;
+using Coflnet.SongVoter.Attributes;
 
 namespace Coflnet.SongVoter.Controllers.Impl
 {
-    public class AuthApiControllerImpl : AuthApiController
+    public class AuthApiControllerImpl : ControllerBase
     {
         private readonly SVContext db;
         private readonly IConfiguration config;
@@ -31,7 +35,19 @@ namespace Coflnet.SongVoter.Controllers.Impl
             Console.WriteLine($"Token for root user {CreateTokenFor(0)}");
         }
 
-        public override async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
+        /// <summary>
+        /// Authenticate with google
+        /// </summary>
+        /// <remarks>Exchange a google identity token for a songvoter token</remarks>
+        /// <param name="authToken">The google identity token</param>
+        /// <response code="200">successful operation</response>
+        [HttpPost]
+        [Route("/v1/auth/google")]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AuthWithGoogle")]
+        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
+        public async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
         {
             var data = ValidateToken(authToken.Token);
             return await GetTokenForUser(data);
