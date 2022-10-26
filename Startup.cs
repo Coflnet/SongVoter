@@ -83,18 +83,17 @@ namespace Coflnet.SongVoter
                     c.SwaggerDoc("0.0.1", new OpenApiInfo
                     {
                         Title = "Songvoter",
-                        Description = "Songvoter (ASP.NET Core 3.1)",
+                        Description = "Songvoter",
                         TermsOfService = new Uri("https://coflnet.com/terms/"),
                         Contact = new OpenApiContact
                         {
-                            Name = "OpenAPI-Generator Contributors",
-                            Url = new Uri("https://github.com/openapitools/openapi-generator"),
+                            Name = "Coflnet",
                             Email = "support@coflnet.com"
                         },
                         License = new OpenApiLicense
                         {
-                            Name = "NoLicense",
-                            Url = new Uri("https://github.com/Coflnet/song-voter/blob/main/LICENSE")
+                            Name = "AGPL",
+                            Url = new Uri("https://github.com/Coflnet/songvoter/blob/main/LICENSE")
                         },
                         Version = "0.0.1",
                     });
@@ -172,13 +171,9 @@ namespace Coflnet.SongVoter
                 })
                 .UseSwaggerUI(c =>
                 {
-                    // set route prefix to openapi, e.g. http://localhost:8080/openapi/index.html
+                    // set route prefix to api, e.g. http://localhost:8080/api/index.html
                     c.RoutePrefix = "api";
-                    //TODO: Either use the SwaggerGen generated OpenAPI contract (generated from C# classes)
                     c.SwaggerEndpoint("/openapi/0.0.1/openapi.json", "Songvoter");
-
-                    //TODO: Or alternatively use the original OpenAPI contract that's included in the static files
-                    // c.SwaggerEndpoint("/openapi-original.json", "Songvoter Original");
                 });
             app.UseRouting();
             app.UseMiddleware<ErrorMiddleware>();
