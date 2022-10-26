@@ -1,5 +1,3 @@
-using System;
-using Coflnet.SongVoter.Controllers.Impl;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 

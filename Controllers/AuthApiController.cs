@@ -20,7 +20,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
 
-namespace Coflnet.SongVoter.Controllers.Impl
+namespace Coflnet.SongVoter.Controllers
 {
     public class AuthApiControllerImpl : ControllerBase
     {
