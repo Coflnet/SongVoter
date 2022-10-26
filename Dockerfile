@@ -28,4 +28,6 @@ RUN dotnet publish "SongVoter.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "SongVoter.dll"]
+RUN useradd --uid $(shuf -i 2000-65000 -n 1) app
+USER app
+ENTRYPOINT ["dotnet", "SongVoter.dll", "--hostBuilder:reloadConfigOnChange=false"]
