@@ -14,10 +14,16 @@ using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Middleware;
 using Coflnet.SongVoter.Transformers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
+using Coflnet.SongVoter.Attributes;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace Coflnet.SongVoter.Controllers.Impl
+namespace Coflnet.SongVoter.Controllers
 {
-    public class SongApiControllerImpl : SongApiController
+    /// <summary>
+    /// 
+    /// </summary>
+    public class SongApiControllerImpl : ControllerBase
     {
         private readonly SVContext db;
         private IDService idService;
@@ -31,7 +37,18 @@ namespace Coflnet.SongVoter.Controllers.Impl
             this.transformer = transformer;
         }
 
-        public override async Task<IActionResult> AddSong([FromBody] SongCreation body)
+        /// <summary>
+        /// Add a new song by url
+        /// </summary>
+        /// <param name="body">Song object that needs to be added to the store</param>
+        /// <response code="405">Invalid input</response>
+        [HttpPost]
+        [Route("/v1/songs")]
+        [Authorize]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AddSong")]
+        public async Task<IActionResult> AddSong([FromBody] SongCreation body)
         {
             if(db.ExternalSongs.Where(s=>s.ExternalId == body.ExternalId).Any())
                 return StatusCode(409,"Song already exists");
@@ -110,7 +127,19 @@ namespace Coflnet.SongVoter.Controllers.Impl
             });
         }
 
-        public override async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
+        /// <summary>
+        /// Finds Song by search term
+        /// </summary>
+        /// <param name="term">Search term to serach for</param>
+        /// <response code="200">successful operation</response>
+        /// <response code="400">Invalid search term</response>
+        [HttpGet]
+        [Route("/v1/songs/search")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("FindSong")]
+        [SwaggerResponse(statusCode: 200, type: typeof(List<Models.Song>), description: "successful operation")]
+        public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
         {
             var songs = await this.db
                 .Songs.Where(s => s.Title.StartsWith(term))
@@ -121,7 +150,21 @@ namespace Coflnet.SongVoter.Controllers.Impl
             return Ok(songs.Select(s=>transformer.ToApiSong(s)));
         }
 
-        public override async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
+        /// <summary>
+        /// Find song by ID
+        /// </summary>
+        /// <remarks>Returns a single song</remarks>
+        /// <param name="songId">ID of song to return</param>
+        /// <response code="200">successful operation</response>
+        /// <response code="400">Invalid ID supplied</response>
+        /// <response code="404">Song not found</response>
+        [HttpGet]
+        [Route("/v1/song/{songId}")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("GetSongById")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Models.Song), description: "successful operation")]
+        public async Task<IActionResult> GetSongById([FromRoute(Name = "songId"), Required] string songId)
         {
             var numericalId = idService.FromHash(songId);
             var db = await this.db

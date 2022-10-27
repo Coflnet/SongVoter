@@ -10,22 +10,24 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 
 # Copy the code into the container
 WORKDIR /
-COPY ["/Coflnet.SongVoter/Coflnet.SongVoter.csproj", "Coflnet.SongVoter/"]
+COPY ["SongVoter.csproj", "SongVoter/"]
 
 # NuGet restore
-RUN dotnet restore "Coflnet.SongVoter/Coflnet.SongVoter.csproj"
-COPY ["/Coflnet.SongVoter/", "Coflnet.SongVoter/"]
+RUN dotnet restore "SongVoter/SongVoter.csproj"
+COPY [".", "SongVoter/"]
 
 # Build the API
-WORKDIR "/Coflnet.SongVoter"
-RUN dotnet build "Coflnet.SongVoter.csproj" -c Release -o /app/build
+WORKDIR "/SongVoter"
+RUN dotnet build "SongVoter.csproj" -c Release -o /app/build
 
 # Publish it
 FROM build AS publish
-RUN dotnet publish "Coflnet.SongVoter.csproj" -c Release -o /app/publish
+RUN dotnet publish "SongVoter.csproj" -c Release -o /app/publish
 
 # Make the final image for publishing
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Coflnet.SongVoter.dll"]
+RUN useradd --uid $(shuf -i 2000-65000 -n 1) app
+USER app
+ENTRYPOINT ["dotnet", "SongVoter.dll", "--hostBuilder:reloadConfigOnChange=false"]

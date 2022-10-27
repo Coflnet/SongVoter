@@ -22,3 +22,6 @@ cd /Coflnet.SongVoter
 docker build -t coflnet.songvoter .
 docker run -p 5000:8080 coflnet.songvoter
 ```
+
+## Client cert for database
+See [npgsql docs](https://www.npgsql.org/doc/security.html#client-certificates)
