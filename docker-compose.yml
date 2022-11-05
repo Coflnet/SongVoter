@@ -7,7 +7,6 @@ services:
       - USER_GID=1000
     restart: always
     networks:
-      - proxy
       - songvoter
     labels:
       - "traefik.enable=true"
@@ -32,5 +31,3 @@ services:
 
 networks:
   songvoter:
-  proxy:
-    external: true

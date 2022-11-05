@@ -30,4 +30,4 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 RUN useradd --uid $(shuf -i 2000-65000 -n 1) app
 USER app
-ENTRYPOINT ["dotnet", "SongVoter.dll", "--hostBuilder:reloadConfigOnChange=false"]
+ENTRYPOINT ["dotnet", "Coflnet.SongVoter.dll", "--hostBuilder:reloadConfigOnChange=false"]
