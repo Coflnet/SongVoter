@@ -1,27 +1,9 @@
-# Coflnet.SongVoter - ASP.NET Core 3.1 Server
+# SongVoter 
+Ever got annoyed by people at a party skipping through good songs to arrive at a bad one?  
+Me too.  
+This project tries to change that by giving everyone the option to specify their favourite songs and then just playing them.
 
-Definition for songvoter API
 
-## Run
-
-Linux/OS X:
-
-```
-sh build.sh
-```
-
-Windows:
-
-```
-build.bat
-```
-## Run in Docker
-
-```
-cd /Coflnet.SongVoter
-docker build -t coflnet.songvoter .
-docker run -p 5000:8080 coflnet.songvoter
-```
 
 ## Client cert for database
 See [npgsql docs](https://www.npgsql.org/doc/security.html#client-certificates)
