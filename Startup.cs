@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -145,6 +145,7 @@ namespace Coflnet.SongVoter
             });
             services.AddSingleton<SongTransformer>();
             services.AddSingleton<IDService>();
+            services.AddHealthChecks();
 
             Console.WriteLine("registered all");
         }
@@ -182,6 +183,7 @@ namespace Coflnet.SongVoter
             app.UseEndpoints(endpoints =>
                 {
                     endpoints.MapControllers();
+                    endpoints.MapHealthChecks("/status");
                 });
         }
     }
