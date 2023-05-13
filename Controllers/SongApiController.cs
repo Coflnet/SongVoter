@@ -43,7 +43,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="body">Song object that needs to be added to the store</param>
         /// <response code="405">Invalid input</response>
         [HttpPost]
-        [Route("/v1/songs")]
+        [Route("/songs")]
         [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
@@ -134,7 +134,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="200">successful operation</response>
         /// <response code="400">Invalid search term</response>
         [HttpGet]
-        [Route("/v1/songs/search")]
+        [Route("/songs/search")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("FindSong")]
@@ -159,7 +159,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="400">Invalid ID supplied</response>
         /// <response code="404">Song not found</response>
         [HttpGet]
-        [Route("/v1/song/{songId}")]
+        [Route("/song/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetSongById")]

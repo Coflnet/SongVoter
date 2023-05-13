@@ -31,7 +31,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="partyId">ID of party to invite to</param>
         /// <response code="200">invite link created</response>
         [HttpGet]
-        [Route("/v1/party/{partyId}/inviteLink")]
+        [Route("/party/inviteLink")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("CreateInviteLink")]
@@ -54,14 +54,18 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful created</response>
         [HttpPost]
-        [Route("/v1/partys")]
+        [Route("/party")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
+        [SwaggerResponse(statusCode: 400, type: typeof(string), description: "invite link created")]
         public async Task<IActionResult> CreateParty()
         {
             var userId = idService.UserId(this);
+            var currentParty = await GetCurrentParty();
+            if(currentParty != null)
+                return BadRequest("You are already in a party, leave it first");
 
             var party = new DBModels.Party()
             {
@@ -79,24 +83,24 @@ namespace Coflnet.SongVoter.Controllers
             return new Models.Party()
             {
                 Id = idService.ToHash(party.Id),
-                Members = party.Members.Select(mem => idService.ToHash(mem.Id)).ToList(),
+                Members = party.Members?.Select(mem => idService.ToHash(mem.Id)).ToList(),
                 Name = party.Name
             };
         }
         /// <summary>
         /// votes a song down so it is play later/not at all
         /// </summary>
-        /// <param name="partyId">ID of party</param>
         /// <param name="songId">ID of the song</param>
         /// <response code="200">downvote accepted</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/downvote/{songId}")]
+        [Route("/party/downvote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("DownvoteSong")]
-        public async Task<IActionResult> DownvoteSong([FromRoute(Name = "partyId"), Required] string partyId, [FromRoute(Name = "songId"), Required] string songId)
+        public async Task<IActionResult> DownvoteSong([FromRoute(Name = "songId"), Required] string songId)
         {
-            var ps = await GetOrCreatePartySong(partyId, songId);
+            var currentParty = await GetCurrentParty();
+            var ps = await GetOrCreatePartySong(currentParty.Id,  (int)idService.FromHash(songId));
             var user = await CurrentUser();
             ps.DownVoters.Add(user);
             ps.UpVoters.Remove(user);
@@ -140,17 +144,29 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful created</response>
         [HttpGet]
-        [Route("/v1/partys")]
+        [Route("/party")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetParties")]
-        [SwaggerResponse(statusCode: 200, type: typeof(List<Party>), description: "successful created")]
-        public async Task<IActionResult> GetParties()
+        [SwaggerResponse(statusCode: 200, type: typeof(Models.Party), description: "current party")]
+        [SwaggerResponse(statusCode: 404, type: typeof(Models.Party), description: "party")]
+        public async Task<ActionResult<Models.Party>> GetParty()
+        {
+            var party = await GetCurrentParty();
+            if (party == null)
+                return NotFound();
+            return Ok(ToExternalParty(party));
+        }
+
+        private async Task<Party> GetCurrentParty()
         {
             var user = await CurrentUser();
-            var parties = db.Parties.Where(p => p.Creator == user || p.Members.Contains(user));
-            return Ok(parties.Select(ToExternalParty));
+            var parties = await db.Parties.Where(p => p.Creator == user || p.Members.Contains(user))
+                .Include(p => p.Members)
+                .Include(c => c.Creator).FirstOrDefaultAsync();
+            return parties;
         }
+
         /// <summary>
         /// Invites a user to a party
         /// </summary>
@@ -158,7 +174,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="userId">ID of user to invite</param>
         /// <response code="201">invite sent</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/invite/{userId}")]
+        [Route("/party/invite/{userId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("InviteToParty")]
@@ -173,7 +189,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="partyId">ID of party to join</param>
         /// <response code="201">joined successfully</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/join")]
+        [Route("/party/{partyId}/join")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
@@ -190,6 +206,10 @@ namespace Coflnet.SongVoter.Controllers
                 song.DownVoters.Add(user);
                 db.Update(song);
             }
+            var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
+            userWithParty.Parties.Clear();
+            userWithParty.Parties.Add(party);
+            user.Parties.Add(party);
             await db.SaveChangesAsync();
             return Ok();
         }
@@ -197,44 +217,63 @@ namespace Coflnet.SongVoter.Controllers
         /// <summary>
         /// kicks a user from a party
         /// </summary>
-        /// <param name="partyId">ID of party to leave</param>
         /// <param name="userId">ID of user to kick</param>
         /// <response code="201">left successfully</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/kick/{userId}")]
+        [Route("/party/kick/{userId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("KickFromParty")]
-        public async Task<IActionResult> KickFromParty([FromRoute(Name = "partyId"), Required] string partyId, [FromRoute(Name = "userId"), Required] string userId)
+        public async Task<IActionResult> KickFromParty([FromRoute(Name = "userId"), Required] string userId)
         {
             var user = await db.Users.FindAsync(idService.FromHash(userId));
-            await RemoveUserFromParty(partyId, user);
+
+            var party = await GetCurrentParty();
+            if (party.Creator != await CurrentUser())
+                return BadRequest("only creator can kick");
+            party.Members.Remove(user);
+            db.Update(party);
+            await db.SaveChangesAsync();
             return Ok();
         }
 
         /// <summary>
         /// Leave a party
         /// </summary>
-        /// <param name="partyId">ID of party to leave</param>
         /// <response code="201">left successfully</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/leave")]
+        [Route("/party/leave")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("LeaveParty")]
-        public async Task<IActionResult> LeaveParty([FromRoute(Name = "partyId"), Required] string partyId)
+        public async Task<IActionResult> LeaveParty()
         {
             var user = await CurrentUser();
-            await RemoveUserFromParty(partyId, user);
-            return Ok();
-        }
-
-        private async Task RemoveUserFromParty(string partyId, User user)
-        {
-            Party party = await GetParty(partyId);
+            var party = await GetCurrentParty();
+            if(party == null)
+                return Ok("no party to leave");
+            if (party.Creator == user)
+            {
+                // transfer ownership to other member if possible
+                if (party.Members.Count > 0)
+                {
+                    party.Creator = party.Members.First();
+                    party.Members.Remove(party.Creator);
+                    db.Update(party);
+                    await db.SaveChangesAsync();
+                    Console.WriteLine("transfared party");
+                }
+                else
+                {
+                    db.Remove(party);
+                    await db.SaveChangesAsync();
+                }
+                return Ok("transfared/deleted party");
+            }
             party.Members.Remove(user);
             db.Update(party);
             await db.SaveChangesAsync();
+            return Ok();
         }
 
         private async Task<Party> GetParty(string partyId)
@@ -250,15 +289,15 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="partyId">ID of party</param>
         /// <response code="200">invite created</response>
         [HttpGet]
-        [Route("/v1/party/{partyId}/nextSong")]
+        [Route("/party/nextSong")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "invite created")]
-        public async Task<IActionResult> NextSong([FromRoute(Name = "partyId"), Required] string partyId)
+        public async Task<IActionResult> NextSong()
         {
-            var pId = idService.FromHash(partyId);
-            var next = await db.PartySongs.Where(ps => ps.Id == pId)
+            var pId = (await GetCurrentParty()).Id;
+            var next = await db.PartySongs.Where(ps => ps.Party.Id == pId)
                                 .Include(ps => ps.DownVoters)
                                 .Include(ps => ps.UpVoters)
                                 .OrderByDescending(ps => 1 + ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
@@ -268,12 +307,36 @@ namespace Coflnet.SongVoter.Controllers
         }
 
         /// <summary>
+        /// Marks a song as played
+        /// </summary>
+        /// <param name="songId">ID of song to mark</param>
+        /// <response code="200">song marked</response>
+        /// <response code="404">song not found</response>
+        [HttpPost]
+        [Route("/party/song/{songId}/played")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("PlayedSong")]
+        public async Task<IActionResult> PlayedSong([FromRoute(Name = "songId"), Required] string songId)
+        {
+            var song = await db.Songs.FindAsync(idService.FromHash(songId));
+            if (song == null)
+                return NotFound();
+            var party = await GetCurrentParty();
+            var partySong = await GetOrCreatePartySong(party.Id, song.Id);
+            partySong.PlayedTimes++;
+            db.Update(partySong);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        /// <summary>
         /// resets the parties playing state
         /// </summary>
         /// <param name="partyId">ID of party to invite to</param>
         /// <response code="200">reset party</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/reset")]
+        [Route("/party/{partyId}/reset")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("ResetParty")]
@@ -296,7 +359,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="songId">ID of the song to upvote</param>
         /// <response code="200">upvoted</response>
         [HttpPost]
-        [Route("/v1/party/{partyId}/upvote/{songId}")]
+        [Route("/party/{partyId}/upvote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("UpvoteSong")]

@@ -2,6 +2,7 @@ using System.Linq;
 using HashidsNet;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 
 namespace Coflnet.SongVoter.Service
 {
@@ -31,9 +32,10 @@ namespace Coflnet.SongVoter.Service
             return hasher.EncodeLong(numbers);
         }
 
-        public long UserId(ControllerBase controller)
+        public int UserId(ControllerBase controller)
         {
-            return FromHash(controller.User.Claims.Where(c => c.Type == "uid").First().Value);
+            System.Console.WriteLine("claims:\n--------------------\n" + JsonConvert.SerializeObject(controller.User.Claims.Select(c=>c.Value)));
+            return (int)FromHash(controller.User.Claims.Where(c => c.Type == "uid").First().Value);
         }
     }
 

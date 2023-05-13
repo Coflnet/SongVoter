@@ -42,7 +42,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="authToken">The google identity token</param>
         /// <response code="200">successful operation</response>
         [HttpPost]
-        [Route("/v1/auth/google")]
+        [Route("/auth/google")]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogle")]
@@ -69,7 +69,7 @@ namespace Coflnet.SongVoter.Controllers
 
 
         [HttpPost]
-        [Route("/v1/auth/test")]
+        [Route("/auth/test")]
         [Consumes("application/json")]
         public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
         {
@@ -92,7 +92,7 @@ namespace Coflnet.SongVoter.Controllers
         }
 
         [HttpDelete]
-        [Route("/v1/db")]
+        [Route("/db")]
         [Consumes("application/json")]
         public async Task<IActionResult> Drop([FromBody] AuthToken token)
         {
@@ -110,7 +110,7 @@ namespace Coflnet.SongVoter.Controllers
         }
 
         [HttpPost]
-        [Route("/v1/db")]
+        [Route("/db")]
         [Consumes("application/json")]
         public async Task<IActionResult> MigrateDb([FromBody] AuthToken token)
         {
@@ -121,7 +121,7 @@ namespace Coflnet.SongVoter.Controllers
             if (savedToken != token.Token)
                 return this.Problem("invalid token passed");
 
-            db.Database.Migrate();
+            await db.Database.MigrateAsync();
 
             return Ok("migrated");
         }

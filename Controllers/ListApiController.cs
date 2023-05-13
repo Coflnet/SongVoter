@@ -30,7 +30,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="playList">An array of songIds to be added to the song</param>
         /// <response code="200">successful created list</response>
         [HttpPost]
-        [Route("/v1/lists")]
+        [Route("/lists")]
         [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
@@ -50,6 +50,73 @@ namespace Coflnet.SongVoter.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Adds a song to a playlist
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("/lists/{listId}/songs")]
+        [Authorize]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AddSongToList")]
+        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
+        public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] string songId)
+        {
+            var dbId = iDService.FromHash(listId);
+            var userId = GetUserId();
+            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            if (list == null)
+            {
+                return NotFound("list not found");
+            }
+            var song = await db.Songs.FindAsync(iDService.FromHash(songId));
+            if (song == null)
+            {
+                return NotFound("song not found");
+            }
+            list.Songs.Add(song);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        /// <summary>
+        /// Removes a song from a playlist
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">successful operation</response>
+        /// <response code="404">list or song not found</response>
+        /// <response code="400">song not in list</response>
+        /// <response code="401">user not authorized</response>
+        [HttpDelete]
+        [Route("/lists/{listId}/songs/{songId}")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("RemoveSongFromList")]
+        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
+        public async Task<IActionResult> RemoveSongFromList([FromRoute(Name = "listId"), Required] string listId, [FromRoute(Name = "songId"), Required] string songId)
+        {
+            var dbId = iDService.FromHash(listId);
+            var userId = GetUserId();
+            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            if (list == null)
+            {
+                return NotFound("list not found");
+            }
+            var song = await db.Songs.FindAsync(iDService.FromHash(songId));
+            if (song == null)
+            {
+                return NotFound("song not found");
+            }
+            if (!list.Songs.Contains(song))
+            {
+                return BadRequest("song not in list");
+            }
+            list.Songs.Remove(song);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
         private long GetUserId()
         {
             return iDService.UserId(this);
@@ -61,7 +128,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="listId">ID of list to return</param>
         /// <response code="200">successful operation</response>
         [HttpGet]
-        [Route("/v1/lists/{listId}")]
+        [Route("/lists/{listId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetListById")]
@@ -81,7 +148,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful response</response>
         [HttpGet]
-        [Route("/v1/lists")]
+        [Route("/lists")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetPlaylists")]
