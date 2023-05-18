@@ -14,12 +14,12 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers
 {
-    public class PartyApiControllerImpl : ControllerBase
+    public class PartyApiController : ControllerBase
     {
         private readonly SVContext db;
         private IDService idService;
         private SongTransformer songTransformer;
-        public PartyApiControllerImpl(SVContext data, IDService idService, SongTransformer songTransformer)
+        public PartyApiController(SVContext data, IDService idService, SongTransformer songTransformer)
         {
             this.db = data;
             this.idService = idService;
@@ -28,25 +28,28 @@ namespace Coflnet.SongVoter.Controllers
         /// <summary>
         /// Creates an invite link for a party
         /// </summary>
-        /// <param name="partyId">ID of party to invite to</param>
         /// <response code="200">invite link created</response>
         [HttpGet]
         [Route("/party/inviteLink")]
-        [Authorize]
+        //[Authorize]
         [SwaggerOperation("CreateInviteLink")]
-        [SwaggerResponse(statusCode: 200, type: typeof(string), description: "invite link created")]
-        public async Task<IActionResult> CreateInviteLink([FromRoute(Name = "partyId"), Required] string partyId)
+        public async Task<ActionResult<Models.Invite>> CreateInviteLink()
         {
+            var party = await GetCurrentParty();
+            var userId = idService.UserId(this);
+            var existing = await db.Invites.Where(i => i.Party == party && i.CreatorId == userId && i.ValidUntil > DateTime.UtcNow).FirstOrDefaultAsync();
+            if (existing != null)
+                return Ok(new Models.Invite(existing, idService));
             var invite = new Invite()
             {
-                CreatorId = (int)idService.UserId(this),
-                Party = await db.Parties.FindAsync(idService.FromHash(partyId)),
-                ValidUntil = DateTime.Now.AddDays(1)
+                CreatorId = userId,
+                Party = party,
+                ValidUntil = DateTime.UtcNow.AddDays(1)
             };
             db.Add(invite);
             await db.SaveChangesAsync();
 
-            return Ok($"https://songvoter.party/invite/{idService.ToHash(invite.Id)}");
+            return Ok(new Models.Invite(existing, idService));
         }
         /// <summary>
         /// Creates a new party
@@ -63,7 +66,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             var userId = idService.UserId(this);
             var currentParty = await GetCurrentParty();
-            if(currentParty != null)
+            if (currentParty != null)
                 return BadRequest("You are already in a party, leave it first");
 
             var party = new DBModels.Party()
@@ -99,7 +102,7 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> DownvoteSong([FromRoute(Name = "songId"), Required] string songId)
         {
             var currentParty = await GetCurrentParty();
-            var ps = await GetOrCreatePartySong(currentParty.Id,  (int)idService.FromHash(songId));
+            var ps = await GetOrCreatePartySong(currentParty.Id, (int)idService.FromHash(songId));
             var user = await CurrentUser();
             ps.DownVoters.Add(user);
             ps.UpVoters.Remove(user);
@@ -249,7 +252,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             var user = await CurrentUser();
             var party = await GetCurrentParty();
-            if(party == null)
+            if (party == null)
                 return Ok("no party to leave");
             if (party.Creator == user)
             {

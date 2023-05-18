@@ -9,5 +9,6 @@ namespace Coflnet.SongVoter.DBModels
         public User User { get; set; }
         public int CreatorId { get; set; }
         public DateTime ValidUntil { get; set; }
+        // TODO: add usage count and limit
     }
 }

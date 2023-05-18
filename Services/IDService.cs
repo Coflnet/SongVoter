@@ -19,7 +19,7 @@ namespace Coflnet.SongVoter.Service
 
         public long FromHash(string hash)
         {
-            return hasher.DecodeLong(hash)[0];
+            return FromHashMany(hash)[0];
         }
         public long[] FromHashMany(string hash)
         {
