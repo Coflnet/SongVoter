@@ -33,7 +33,6 @@ namespace Coflnet.SongVoter.Controllers
         [HttpGet]
         [Route("/party/inviteLink")]
         [Authorize]
-        [ValidateModelState]
         [SwaggerOperation("CreateInviteLink")]
         [SwaggerResponse(statusCode: 200, type: typeof(string), description: "invite link created")]
         public async Task<IActionResult> CreateInviteLink([FromRoute(Name = "partyId"), Required] string partyId)
@@ -47,7 +46,7 @@ namespace Coflnet.SongVoter.Controllers
             db.Add(invite);
             await db.SaveChangesAsync();
 
-            return Ok($"https://songvoter.party/invite/idService.ToHash(invite.Id)");
+            return Ok($"https://songvoter.party/invite/{idService.ToHash(invite.Id)}");
         }
         /// <summary>
         /// Creates a new party

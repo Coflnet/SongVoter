@@ -17,6 +17,8 @@ namespace Coflnet.SongVoter.DBModels
 
         public string ExternalId {get;set;}
 
+        // maybe add duration
+
 
         /// <summary>
         /// 
