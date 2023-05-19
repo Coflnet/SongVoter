@@ -19,6 +19,10 @@ using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Newtonsoft.Json;
 using Coflnet.SongVoter.Attributes;
+using SpotifyAPI.Web.Auth;
+using SpotifyAPI.Web;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -53,12 +57,100 @@ namespace Coflnet.SongVoter.Controllers
             return await GetTokenForUser(data);
         }
 
-        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data)
+        public class AuthCode
+        {
+            public string Code { get; set; }
+        }
+
+
+        /// <summary>
+        /// Google auth code for server side auth
+        /// </summary>
+        /// <remarks>Exchange a google auth code for a songvoter token</remarks>
+        /// <param name="authCode">The google auth code</param>
+        /// <response code="200">successful operation</response>
+        [HttpPost]
+        [Route("/auth/google/code")]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AuthWithGoogleCode")]
+        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
+        public async Task<IActionResult> AuthWithGoogleCode([FromBody] AuthCode authCode)
+        {
+            // get token with code 
+            var codeReceiver = new LocalServerCodeReceiver();
+            var clientSecrets = new ClientSecrets()
+            {
+                ClientId = config["google:clientid"],
+                ClientSecret = config["google:clientsecret"]
+            };
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer()
+            {
+                ClientSecrets = clientSecrets,
+                Scopes = new string[] { "openid", "profile", "email" }
+            });
+            var token = await flow.ExchangeCodeForTokenAsync("user", authCode.Code, "", System.Threading.CancellationToken.None);
+            Console.WriteLine("refresh token: " + token.RefreshToken);
+            var payload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken);
+            return await GetTokenForUser(payload, token.RefreshToken);
+        }
+
+        [HttpPost]
+        [Route("/auth/spotify/code")]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AuthWithSpotify")]
+        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
+        public async Task<IActionResult> AuthWithSpotify([FromBody] AuthCode authCode)
+        {
+            var token = await new OAuthClient().RequestToken(new AuthorizationCodeTokenRequest(
+                config["spotify:clientid"],
+                config["spotify:clientsecret"],
+                authCode.Code,
+                new Uri("http://localhost:5000/auth/spotify/code")
+            ));
+            var spotify = new SpotifyClient(token.AccessToken);
+            var me = await spotify.UserProfile.Current();
+            var userId = db.Users
+                .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
+                .Select(u => u.Id).FirstOrDefault();
+            if (userId == 0)
+            {
+                var user = new User()
+                {
+                    Name = me.DisplayName,
+                    Tokens = new List<Oauth2Token>() { new Oauth2Token() {
+                    ExternalId = me.Id,
+                    Platform = Platforms.Spotify,
+                    // add refresh token
+                    AccessToken = token.AccessToken,
+                    } }
+                };
+                db.Add(user);
+                await db.SaveChangesAsync();
+                userId = user.Id;
+            }
+            return Ok(new { token = CreateTokenFor(userId) });
+        }
+
+        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null)
         {
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
             if (userId == 0)
             {
-                var user = new User() { GoogleId = data.Subject, Name = data.Name };
+                var user = new User()
+                {
+                    GoogleId = data.Subject,
+                    Name = data.Name,
+                    Tokens = new List<Oauth2Token>() { new Oauth2Token() {
+                        ExternalId = data.Subject,
+                        Platform = Platforms.Youtube,
+                        // add refresh token
+                        AccessToken = data.JwtId,
+                        RefreshToken = refreshToken,
+                        Expiration = DateTime.UtcNow.AddSeconds(data.ExpirationTimeSeconds.Value)
+                    } }
+                };
                 db.Add(user);
                 await db.SaveChangesAsync();
                 userId = user.Id;

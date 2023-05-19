@@ -86,6 +86,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 Id = idService.ToHash(party.Id),
                 Members = party.Members?.Select(mem => idService.ToHash(mem.Id)).ToList(),
+                OwnerId = idService.ToHash(party.Creator.Id),
                 Name = party.Name
             };
         }

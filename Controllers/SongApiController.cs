@@ -82,7 +82,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 Artist = track.Artists.First().Name,
                 ExternalId = track.Id,
-                Platform = DBModels.ExternalSong.Platforms.Spotify,
+                Platform = Platforms.Spotify,
                 ThumbnailUrl = track.Album.Images.First().Url,
                 Title = track.Album.Name
             };
@@ -114,7 +114,7 @@ namespace Coflnet.SongVoter.Controllers
                 {
                     Artist = ytVideo.Snippet.ChannelTitle,
                     ExternalId = ytVideo.Id,
-                    Platform = DBModels.ExternalSong.Platforms.Youtube,
+                    Platform = Platforms.Youtube,
                     ThumbnailUrl = ytVideo.Snippet.Thumbnails.Standard.Url,
                     Title = ytVideo.Snippet.Title
                 };

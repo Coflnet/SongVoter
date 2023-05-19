@@ -37,6 +37,11 @@ namespace Coflnet.SongVoter.Models
         /// </summary>
         [DataMember(Name="name", EmitDefaultValue=false)]
         public string Name { get; set; }
+        /// <summary>
+        /// The id of the creator
+        /// </summary>
+        [DataMember(Name="ownerId", EmitDefaultValue=false)]
+        public string OwnerId { get; set; }
 
         /// <summary>
         /// Gets or Sets Members
