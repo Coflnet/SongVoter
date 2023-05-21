@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
-using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Transformers;
 using Microsoft.AspNetCore.Authorization;
@@ -63,7 +62,7 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
         [SwaggerResponse(statusCode: 400, type: typeof(string), description: "invite link created")]
-        public async Task<IActionResult> CreateParty(PartyCreateOptions partyCreateOptions)
+        public async Task<IActionResult> CreateParty(Models.PartyCreateOptions partyCreateOptions)
         {
             var userId = idService.UserId(this);
             var currentParty = await GetCurrentParty();
