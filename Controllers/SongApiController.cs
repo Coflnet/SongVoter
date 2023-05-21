@@ -17,6 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Coflnet.SongVoter.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -28,13 +29,15 @@ namespace Coflnet.SongVoter.Controllers
         private readonly SVContext db;
         private IDService idService;
         private IConfiguration config;
+        private ILogger<SongApiControllerImpl> logger;
         private SongTransformer transformer;
-        public SongApiControllerImpl(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer)
+        public SongApiControllerImpl(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer, ILogger<SongApiControllerImpl> logger)
         {
             this.db = data;
             idService = iDService;
             this.config = config;
             this.transformer = transformer;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -50,15 +53,15 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerOperation("AddSong")]
         public async Task<IActionResult> AddSong([FromBody] SongCreation body)
         {
-            if(db.ExternalSongs.Where(s=>s.ExternalId == body.ExternalId).Any())
-                return StatusCode(409,"Song already exists");
+            if (db.ExternalSongs.Where(s => s.ExternalId == body.ExternalId).Any())
+                return StatusCode(409, "Song already exists");
             IEnumerable<DBModels.Song> songs;
             if (body.Platform == SongCreation.PlatformEnum.SpotifyEnum)
-                songs = new DBModels.Song[] { await GetSongFromSpotify() };
+                songs = new DBModels.Song[] { await GetSongFromSpotify(null) };
             else if (body.Platform == SongCreation.PlatformEnum.YoutubeEnum)
                 songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId });
             else
-                throw new ApiException(System.Net.HttpStatusCode.BadRequest,"The field `platform` in your request is invalid");
+                throw new ApiException(System.Net.HttpStatusCode.BadRequest, "The field `platform` in your request is invalid");
 
             foreach (var song in songs)
             {
@@ -69,14 +72,14 @@ namespace Coflnet.SongVoter.Controllers
             return Ok(transformer.ToApiSong(songs.First()));
         }
 
-        private async Task<DBModels.Song> GetSongFromSpotify()
+        private async Task<DBModels.Song> GetSongFromSpotify(string trackId)
         {
             var config = SpotifyClientConfig
                           .CreateDefault()
                           .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:appid"], this.config["spotify:secret"]));
             var spotify = new SpotifyClient(config);
 
-            var track = await spotify.Tracks.Get("1sgKE7YUAhGDLNUU1ByEWu");
+            var track = await spotify.Tracks.Get(trackId);
 
             var external = new DBModels.ExternalSong()
             {
@@ -110,20 +113,29 @@ namespace Coflnet.SongVoter.Controllers
             return response.Items.Select(ytVideo =>
             {
 
-                var external = new DBModels.ExternalSong()
+                try
                 {
-                    Artist = ytVideo.Snippet.ChannelTitle,
-                    ExternalId = ytVideo.Id,
-                    Platform = Platforms.Youtube,
-                    ThumbnailUrl = ytVideo.Snippet.Thumbnails.Standard.Url,
-                    Title = ytVideo.Snippet.Title
-                };
 
-                return new DBModels.Song()
+                    var external = new DBModels.ExternalSong()
+                    {
+                        Artist = ytVideo.Snippet.ChannelTitle,
+                        ExternalId = ytVideo.Id,
+                        Platform = Platforms.Youtube,
+                        ThumbnailUrl = (ytVideo.Snippet?.Thumbnails?.Standard ?? ytVideo.Snippet?.Thumbnails?.High)?.Url,
+                        Title = ytVideo.Snippet.Title
+                    };
+
+                    return new DBModels.Song()
+                    {
+                        ExternalSongs = new System.Collections.Generic.List<DBModels.ExternalSong>() { external },
+                        Title = ytVideo.Snippet.Title
+                    };
+                }
+                catch (System.Exception e)
                 {
-                    ExternalSongs = new System.Collections.Generic.List<DBModels.ExternalSong>() { external },
-                    Title = ytVideo.Snippet.Title
-                };
+                    logger.LogError(e, "Error while parsing youtube video " + JsonConvert.SerializeObject(ytVideo,Formatting.Indented));
+                    throw;
+                }
             });
         }
 
@@ -141,13 +153,69 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(List<Models.Song>), description: "successful operation")]
         public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
         {
+            var localRes = await SearchLocalDbFor(term);
+            if(localRes.Count() > 12)
+            {
+                return Ok(localRes);
+            }
+            // search for song on youtube api
+            Google.Apis.YouTube.v3.YouTubeService yt = new Google.Apis.YouTube.v3.YouTubeService(
+                        new BaseClientService.Initializer()
+                        {
+                            ApiKey = this.config["youtube:apiKey"]
+                        });
+
+            var request = yt.Search.List("snippet");
+            request.Q = term;
+            request.MaxResults = 20;
+            request.Type = "video";
+
+            var response = await request.ExecuteAsync();
+            // convert response to db entry 
+            var ids = response.Items.Select(i => i.Id.VideoId);
+            // filter for existing songs
+            var existing = await db.ExternalSongs.Where(s => ids.Contains(s.ExternalId)).Select(e => e.ExternalId).ToListAsync();
+            if (existing.Count != ids.Count())
+            {
+                var songsToAdd = await GetSongDetailsFromYoutube(ids.Except(existing));
+                foreach (var song in songsToAdd)
+                {
+                    db.Add(song);
+                }
+                await db.SaveChangesAsync();
+            }
+
+            // search for song on spotify api
+            var config = SpotifyClientConfig
+                          .CreateDefault()
+                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:appid"], this.config["spotify:secret"]));
+            var spotify = new SpotifyClient(config);
+            var query = new SearchRequest(SearchRequest.Types.Track, term);
+            query.Limit = 20;
+            var spotifyResponse = await spotify.Search.Item(query);
+            var spotifyIds = spotifyResponse.Tracks.Items.Select(i => i.Id);
+            var spotifyExisting = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).Select(e => e.ExternalId).ToListAsync();
+            if (spotifyExisting.Count != spotifyIds.Count())
+            {
+                foreach (var item in spotifyIds.Except(spotifyExisting))
+                {
+                    var songsToAdd = await GetSongFromSpotify(item);
+                    db.Add(songsToAdd);
+                }
+                await db.SaveChangesAsync();
+            }
+            return Ok(await SearchLocalDbFor(term));
+        }
+
+        private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term)
+        {
             var songs = await this.db
-                .Songs.Where(s => s.Title.StartsWith(term))
-                .Include(s=>s.ExternalSongs)
+                .Songs.Where(s => s.Title.Contains(term))
+                .Include(s => s.ExternalSongs)
                 .Take(20)
                 .ToListAsync();
 
-            return Ok(songs.Select(s=>transformer.ToApiSong(s)));
+            return songs.Select(s => transformer.ToApiSong(s));
         }
 
         /// <summary>
@@ -169,12 +237,12 @@ namespace Coflnet.SongVoter.Controllers
             var numericalId = idService.FromHash(songId);
             var db = await this.db
                 .Songs.Where(s => s.Id == numericalId)
-                .Include(s=>s.ExternalSongs)
+                .Include(s => s.ExternalSongs)
                 .FirstOrDefaultAsync();
 
             return base.Ok(transformer.ToApiSong(db));
         }
 
-       
+
     }
 }
