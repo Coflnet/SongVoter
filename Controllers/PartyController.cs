@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
+using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Transformers;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +15,12 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers
 {
-    public class PartyApiController : ControllerBase
+    public class PartyController : ControllerBase
     {
         private readonly SVContext db;
         private IDService idService;
         private SongTransformer songTransformer;
-        public PartyApiController(SVContext data, IDService idService, SongTransformer songTransformer)
+        public PartyController(SVContext data, IDService idService, SongTransformer songTransformer)
         {
             this.db = data;
             this.idService = idService;
@@ -62,7 +63,7 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
         [SwaggerResponse(statusCode: 400, type: typeof(string), description: "invite link created")]
-        public async Task<IActionResult> CreateParty()
+        public async Task<IActionResult> CreateParty(PartyCreateOptions partyCreateOptions)
         {
             var userId = idService.UserId(this);
             var currentParty = await GetCurrentParty();
@@ -72,7 +73,7 @@ namespace Coflnet.SongVoter.Controllers
             var party = new DBModels.Party()
             {
                 Creator = db.Users.Find(userId),
-                Name = "new party"
+                Name = partyCreateOptions.Name ?? "My party"
             };
             this.db.Add(party);
             await this.db.SaveChangesAsync();
