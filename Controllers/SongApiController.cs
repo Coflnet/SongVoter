@@ -76,7 +76,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             var config = SpotifyClientConfig
                           .CreateDefault()
-                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:appid"], this.config["spotify:secret"]));
+                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
             var spotify = new SpotifyClient(config);
 
             var track = await spotify.Tracks.Get(trackId);
