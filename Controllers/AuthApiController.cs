@@ -75,7 +75,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogleCode")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithGoogleCode([FromBody] AuthRefreshToken refreshToken)
+        public async Task<AuthToken> AuthWithGoogleCode([FromBody] AuthRefreshToken refreshToken)
         {
             // store refresh token
             var data = ValidateToken(refreshToken.Token);
@@ -102,7 +102,7 @@ namespace Coflnet.SongVoter.Controllers
                     Console.WriteLine("Failed to get youtube data with login token");
                 }
             });
-            return Ok(await GetTokenForUser(data, refreshToken.RefreshToken, refreshToken.AccessToken));
+            return await GetTokenForUser(data, refreshToken.RefreshToken, refreshToken.AccessToken);
         }
 
         [HttpPost]
@@ -143,7 +143,7 @@ namespace Coflnet.SongVoter.Controllers
             return Ok(new { token = CreateTokenFor(userId) });
         }
 
-        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
+        private async Task<AuthToken> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
         {
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
             if (userId == 0)
@@ -166,7 +166,7 @@ namespace Coflnet.SongVoter.Controllers
                 userId = user.Id;
             }
 
-            return Ok(new { token = CreateTokenFor(userId) });
+            return new AuthToken() { Token = CreateTokenFor(userId) };
         }
 
 
@@ -190,7 +190,7 @@ namespace Coflnet.SongVoter.Controllers
                 Name = "testUser"
             };
 
-            return await GetTokenForUser(payload);
+            return Ok(await GetTokenForUser(payload));
         }
 
         [HttpDelete]
