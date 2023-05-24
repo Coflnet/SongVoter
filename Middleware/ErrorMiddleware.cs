@@ -1,6 +1,8 @@
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.SongVoter.Middleware
 {
@@ -23,6 +25,8 @@ namespace Coflnet.SongVoter.Middleware
             {
                 context.Response.ContentType = "text/plain";
                 context.Response.StatusCode = (int)ex.StatusCode;
+                context.RequestServices.GetRequiredService<ILogger<ErrorMiddleware>>()
+                    .LogError(ex, "ApiException");
                 await context.Response.WriteAsync(ex.Message);
             }
         }

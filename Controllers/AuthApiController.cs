@@ -102,13 +102,7 @@ namespace Coflnet.SongVoter.Controllers
                     Console.WriteLine("Failed to get youtube data with login token");
                 }
             });
-            return Ok(await GetTokenForUser(data, refreshToken.RefreshToken));
-        }
-
-        public class AuthRefreshToken
-        {
-            public string Token { get; set; }
-            public string RefreshToken { get; set; }
+            return Ok(await GetTokenForUser(data, refreshToken.RefreshToken, refreshToken.AccessToken));
         }
 
         [HttpPost]
@@ -149,7 +143,7 @@ namespace Coflnet.SongVoter.Controllers
             return Ok(new { token = CreateTokenFor(userId) });
         }
 
-        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null)
+        private async Task<IActionResult> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
         {
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
             if (userId == 0)
@@ -162,7 +156,7 @@ namespace Coflnet.SongVoter.Controllers
                         ExternalId = data.Subject,
                         Platform = Platforms.Youtube,
                         // add refresh token
-                        AccessToken = data.JwtId,
+                        AccessToken = accessToken,
                         RefreshToken = refreshToken,
                         Expiration = DateTime.UtcNow.AddSeconds(data.ExpirationTimeSeconds.Value)
                     } }
@@ -273,7 +267,6 @@ namespace Coflnet.SongVoter.Controllers
             {
                 throw new ApiException(System.Net.HttpStatusCode.InternalServerError, $"{e.InnerException.Message}");
             }
-
         }
     }
 }
