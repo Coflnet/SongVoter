@@ -89,10 +89,21 @@ namespace Coflnet.SongVoter.Controllers
                 ClientSecrets = clientSecrets,
                 Scopes = new string[] { "openid", "profile", "email" }
             });
-            var token = await flow.ExchangeCodeForTokenAsync("user", authCode.Code, "", System.Threading.CancellationToken.None);
-            Console.WriteLine("refresh token: " + token.RefreshToken);
-            var payload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken);
-            return await GetTokenForUser(payload, token.RefreshToken);
+            try
+            {
+                var token = await flow.ExchangeCodeForTokenAsync("user", authCode.Code, "", System.Threading.CancellationToken.None);
+                Console.WriteLine("refresh token: " + token.RefreshToken);
+                var payload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken);
+                return await GetTokenForUser(payload, token.RefreshToken);
+            } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException e)
+            {
+                Console.WriteLine("Error while exchanging code for token: " + e.Error.Error);
+                Console.WriteLine(e.HelpLink);
+                Console.WriteLine(e.Error.ErrorDescription);
+                Console.WriteLine(e.Error.ErrorUri);
+                Console.WriteLine(e.StatusCode);
+                return this.Problem("could not exchange token " + e.Error.ErrorDescription);
+            }
         }
 
         [HttpPost]
