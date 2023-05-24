@@ -86,7 +86,7 @@ namespace Coflnet.SongVoter.Controllers
                     Google.Apis.YouTube.v3.YouTubeService yt = new Google.Apis.YouTube.v3.YouTubeService(
                         new BaseClientService.Initializer()
                         {
-                            ApiKey = refreshToken.Token
+                            ApiKey = refreshToken.AccessToken
                         });
 
                     var request = yt.Search.List("snippet");
