@@ -268,6 +268,9 @@ namespace Coflnet.SongVoter.Controllers
                 }
                 else
                 {
+                    // remove invites
+                    var invites = await db.Invites.Where(i => i.Party == party).ToListAsync();
+                    db.RemoveRange(invites);
                     db.Remove(party);
                     await db.SaveChangesAsync();
                 }
