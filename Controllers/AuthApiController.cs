@@ -95,13 +95,19 @@ namespace Coflnet.SongVoter.Controllers
                 Console.WriteLine("refresh token: " + token.RefreshToken);
                 var payload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken);
                 return await GetTokenForUser(payload, token.RefreshToken);
-            } catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException e)
+            }
+            catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException e)
             {
                 Console.WriteLine("Error while exchanging code for token: " + e.Error.Error);
                 Console.WriteLine(e.HelpLink);
                 Console.WriteLine(e.Error.ErrorDescription);
                 Console.WriteLine(e.Error.ErrorUri);
                 Console.WriteLine(e.StatusCode);
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.InnerException);
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e.Source);
+                Console.WriteLine(JsonConvert.SerializeObject(e.Data));
                 return this.Problem("could not exchange token " + e.Error.ErrorDescription);
             }
         }
