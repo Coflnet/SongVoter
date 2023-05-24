@@ -23,6 +23,7 @@ using SpotifyAPI.Web.Auth;
 using SpotifyAPI.Web;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Services;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -45,7 +46,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <remarks>Exchange a google identity token for a songvoter token</remarks>
         /// <param name="authToken">The google identity token</param>
         /// <response code="200">successful operation</response>
-        [HttpPost]
+       /* [HttpPost]
         [Route("/auth/google")]
         [Consumes("application/json")]
         [ValidateModelState]
@@ -55,61 +56,59 @@ namespace Coflnet.SongVoter.Controllers
         {
             var data = ValidateToken(authToken.Token);
             return await GetTokenForUser(data);
-        }
+        }*/
+
 
         public class AuthCode
         {
             public string Code { get; set; }
         }
 
-
         /// <summary>
-        /// Google auth code for server side auth
+        /// Stores google auth token server side
         /// </summary>
-        /// <remarks>Exchange a google auth code for a songvoter token</remarks>
-        /// <param name="authCode">The google auth code</param>
+        /// <param name="refreshToken">The google refresh token</param>
         /// <response code="200">successful operation</response>
         [HttpPost]
-        [Route("/auth/google/code")]
+        [Route("/auth/google")]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogleCode")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithGoogleCode([FromBody] AuthCode authCode)
+        public async Task<IActionResult> AuthWithGoogleCode([FromBody] AuthRefreshToken refreshToken)
         {
-            // get token with code 
-            var codeReceiver = new LocalServerCodeReceiver();
-            var clientSecrets = new ClientSecrets()
+            // store refresh token
+            var data = ValidateToken(refreshToken.Token);
+            _ = Task.Run(async () =>
             {
-                ClientId = config["google:clientid"],
-                ClientSecret = config["google:clientsecret"]
-            };
-            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer()
-            {
-                ClientSecrets = clientSecrets,
-                Scopes = new string[] { "openid", "profile", "email" }
+                try
+                {
+                    Google.Apis.YouTube.v3.YouTubeService yt = new Google.Apis.YouTube.v3.YouTubeService(
+                        new BaseClientService.Initializer()
+                        {
+                            ApiKey = refreshToken.Token
+                        });
+
+                    var request = yt.Search.List("snippet");
+                    request.Q = "pokerface";
+                    request.MaxResults = 20;
+                    request.Type = "video";
+
+                    var response = await request.ExecuteAsync();
+                    Console.WriteLine(JsonConvert.SerializeObject(response));
+                }
+                catch (System.Exception)
+                {
+                    Console.WriteLine("Failed to get youtube data with login token");
+                }
             });
-            try
-            {
-                var token = await flow.ExchangeCodeForTokenAsync("user", authCode.Code, "", System.Threading.CancellationToken.None);
-                Console.WriteLine("refresh token: " + token.RefreshToken);
-                var payload = await GoogleJsonWebSignature.ValidateAsync(token.IdToken);
-                return await GetTokenForUser(payload, token.RefreshToken);
-            }
-            catch (Google.Apis.Auth.OAuth2.Responses.TokenResponseException e)
-            {
-                Console.WriteLine("Error while exchanging code for token: " + e.Error.Error);
-                Console.WriteLine(e.HelpLink);
-                Console.WriteLine(e.Error.ErrorDescription);
-                Console.WriteLine(e.Error.ErrorUri);
-                Console.WriteLine(e.StatusCode);
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.InnerException);
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e.Source);
-                Console.WriteLine(JsonConvert.SerializeObject(e.Data));
-                return this.Problem("could not exchange token " + e.Error.ErrorDescription);
-            }
+            return Ok(await GetTokenForUser(data, refreshToken.RefreshToken));
+        }
+
+        public class AuthRefreshToken
+        {
+            public string Token { get; set; }
+            public string RefreshToken { get; set; }
         }
 
         [HttpPost]
