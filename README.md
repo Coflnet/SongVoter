@@ -6,3 +6,4 @@ This project tries to change that by giving everyone the option to specify their
 
 ## Client cert for database
 See [npgsql docs](https://www.npgsql.org/doc/security.html#client-certificates)
+
