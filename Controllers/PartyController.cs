@@ -49,7 +49,7 @@ namespace Coflnet.SongVoter.Controllers
             db.Add(invite);
             await db.SaveChangesAsync();
 
-            return Ok(new Models.Invite(existing, idService));
+            return Ok(new Models.Invite(invite, idService));
         }
         /// <summary>
         /// Creates a new party
