@@ -62,6 +62,7 @@ namespace Coflnet.SongVoter.Controllers
         public class AuthCode
         {
             public string Code { get; set; }
+            public string RedirectUri { get; set; }
         }
 
         /// <summary>
@@ -119,7 +120,7 @@ namespace Coflnet.SongVoter.Controllers
                                 config["spotify:clientid"],
                                 config["spotify:clientsecret"],
                                 authCode.Code,
-                                new Uri("http://localhost:5000/auth/spotify/code")
+                                new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account")
                             ));
                 var spotify = new SpotifyClient(token.AccessToken);
                 var me = await spotify.UserProfile.Current();
