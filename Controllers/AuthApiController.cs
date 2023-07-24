@@ -116,11 +116,13 @@ namespace Coflnet.SongVoter.Controllers
         {
             try
             {
+                var uri = new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account");
+                Console.WriteLine("Auth with spotify code " + authCode.Code + " redirect " + uri);
                 var token = await new OAuthClient().RequestToken(new AuthorizationCodeTokenRequest(
                                 config["spotify:clientid"],
                                 config["spotify:clientsecret"],
                                 authCode.Code,
-                                new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account")
+                                uri
                             ));
                 var spotify = new SpotifyClient(token.AccessToken);
                 var me = await spotify.UserProfile.Current();
@@ -133,10 +135,10 @@ namespace Coflnet.SongVoter.Controllers
                     {
                         Name = me.DisplayName,
                         Tokens = new List<Oauth2Token>() { new Oauth2Token() {
-                    ExternalId = me.Id,
-                    Platform = Platforms.Spotify,
-                    // add refresh token
-                    AccessToken = token.AccessToken,
+                        ExternalId = me.Id,
+                        Platform = Platforms.Spotify,
+                        // add refresh token
+                        AccessToken = token.AccessToken,
                     } }
                     };
                     db.Add(user);
