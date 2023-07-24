@@ -113,34 +113,43 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
         public async Task<IActionResult> AuthWithSpotify([FromBody] AuthCode authCode)
         {
-            var token = await new OAuthClient().RequestToken(new AuthorizationCodeTokenRequest(
-                config["spotify:clientid"],
-                config["spotify:clientsecret"],
-                authCode.Code,
-                new Uri("http://localhost:5000/auth/spotify/code")
-            ));
-            var spotify = new SpotifyClient(token.AccessToken);
-            var me = await spotify.UserProfile.Current();
-            var userId = db.Users
-                .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
-                .Select(u => u.Id).FirstOrDefault();
-            if (userId == 0)
+            try
             {
-                var user = new User()
+                var token = await new OAuthClient().RequestToken(new AuthorizationCodeTokenRequest(
+                                config["spotify:clientid"],
+                                config["spotify:clientsecret"],
+                                authCode.Code,
+                                new Uri("http://localhost:5000/auth/spotify/code")
+                            ));
+                var spotify = new SpotifyClient(token.AccessToken);
+                var me = await spotify.UserProfile.Current();
+                var userId = db.Users
+                    .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
+                    .Select(u => u.Id).FirstOrDefault();
+                if (userId == 0)
                 {
-                    Name = me.DisplayName,
-                    Tokens = new List<Oauth2Token>() { new Oauth2Token() {
+                    var user = new User()
+                    {
+                        Name = me.DisplayName,
+                        Tokens = new List<Oauth2Token>() { new Oauth2Token() {
                     ExternalId = me.Id,
                     Platform = Platforms.Spotify,
                     // add refresh token
                     AccessToken = token.AccessToken,
                     } }
-                };
-                db.Add(user);
-                await db.SaveChangesAsync();
-                userId = user.Id;
+                    };
+                    db.Add(user);
+                    await db.SaveChangesAsync();
+                    userId = user.Id;
+                }
+                return Ok(new { token = CreateTokenFor(userId) });
             }
-            return Ok(new { token = CreateTokenFor(userId) });
+            catch (SpotifyAPI.Web.APIException e)
+            {
+                Console.WriteLine(JsonConvert.SerializeObject(e.Response));
+                return this.Problem(e.Message);
+            }
+
         }
 
         private async Task<AuthToken> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
