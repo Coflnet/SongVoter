@@ -188,7 +188,7 @@ namespace Coflnet.SongVoter.Controllers
             // search for song on spotify api
             var config = SpotifyClientConfig
                           .CreateDefault()
-                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:appid"], this.config["spotify:secret"]));
+                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
             var spotify = new SpotifyClient(config);
             var query = new SearchRequest(SearchRequest.Types.Track, term);
             query.Limit = 20;
