@@ -33,6 +33,7 @@ using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Middleware;
 using Coflnet.SongVoter.Transformers;
 using Coflnet.SongVoter.Service;
+using Coflnet.Core;
 
 namespace Coflnet.SongVoter
 {
@@ -147,6 +148,7 @@ namespace Coflnet.SongVoter
             services.AddSingleton<SongTransformer>();
             services.AddSingleton<IDService>();
             services.AddHealthChecks();
+            services.AddCoflnetCore();
 
             Console.WriteLine("registered all");
         }
@@ -166,6 +168,7 @@ namespace Coflnet.SongVoter
             {
                 app.UseHsts();
             }
+            app.UseCoflnetCore();
 
             app.UseSwagger(c =>
                 {
