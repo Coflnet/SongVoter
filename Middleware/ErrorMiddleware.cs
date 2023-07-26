@@ -32,12 +32,12 @@ namespace Coflnet.SongVoter.Middleware
         }
     }
 
-    public class ApiException : System.Exception
+    public class ApiException : Coflnet.Core.ApiException
     {
         public HttpStatusCode StatusCode;
 
         public ApiException(HttpStatusCode statusCode, string message)
-            : base(message)
+            : base("error", message)
         {
             StatusCode = statusCode;
         }

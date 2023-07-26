@@ -181,7 +181,6 @@ namespace Coflnet.SongVoter
                     c.SwaggerEndpoint("/openapi/0.0.1/openapi.json", "Songvoter");
                 });
             app.UseRouting();
-            app.UseMiddleware<ErrorMiddleware>();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>

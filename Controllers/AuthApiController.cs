@@ -79,7 +79,7 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<AuthToken> AuthWithGoogleCode([FromBody] AuthRefreshToken refreshToken)
         {
             // store refresh token
-            var data = ValidateToken(refreshToken.Token);
+            var data = await ValidateToken(refreshToken.Token);
             _ = Task.Run(async () =>
             {
                 try
@@ -265,13 +265,11 @@ namespace Coflnet.SongVoter.Controllers
             return jwt_token;
         }
 
-        public static GoogleJsonWebSignature.Payload ValidateToken(string token)
+        public static async Task<GoogleJsonWebSignature.Payload> ValidateToken(string token)
         {
             try
             {
-                var client = GoogleJsonWebSignature.ValidateAsync(token);
-                client.Wait();
-                var tokenData = client.Result;
+                var tokenData = await GoogleJsonWebSignature.ValidateAsync(token);
                 Console.WriteLine("google user: " + tokenData.Name);
                 return tokenData;
             }
