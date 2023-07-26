@@ -137,7 +137,8 @@ namespace Coflnet.SongVoter.Controllers
         {
             var dbId = iDService.FromHash(listId);
             var userId = GetUserId();
-            var result = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            var result = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId)
+                .Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).FirstOrDefaultAsync();
             return base.Ok(DBToApiPlaylist(result));
         }
 
@@ -156,7 +157,8 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> GetPlaylists()
         {
             var userId = GetUserId();
-            var result = await db.PlayLists.Where(p => p.Owner == userId).Include(p => p.Songs).ToListAsync();
+            var result = await db.PlayLists.Where(p => p.Owner == userId)
+                .Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).ToListAsync();
             return Ok(result.Select(p => DBToApiPlaylist(p)));
         }
 
