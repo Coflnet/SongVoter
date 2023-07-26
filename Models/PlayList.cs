@@ -20,6 +20,20 @@ using Coflnet.SongVoter.Converters;
 
 namespace Coflnet.SongVoter.Models
 { 
+    public class PlayListCreate 
+    {
+        /// <summary>
+        /// Gets or Sets Title
+        /// </summary>
+        [DataMember(Name="title", EmitDefaultValue=false)]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// Gets or Sets Songs
+        /// </summary>
+        [DataMember(Name="songs", EmitDefaultValue=false)]
+        public List<string> Songs { get; set; }
+    }
     /// <summary>
     /// 
     /// </summary>
@@ -42,7 +56,7 @@ namespace Coflnet.SongVoter.Models
         /// Gets or Sets Songs
         /// </summary>
         [DataMember(Name="songs", EmitDefaultValue=false)]
-        public List<string> Songs { get; set; }
+        public List<Song> Songs { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object

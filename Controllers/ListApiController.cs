@@ -36,7 +36,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("CreatePlaylist")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful created list")]
-        public async Task<IActionResult> CreatePlaylist([FromBody] PlayList playList)
+        public async Task<IActionResult> CreatePlaylist([FromBody] PlayListCreate playList)
         {
             var userId = GetUserId();
             var songIds = playList.Songs.Select(sid => iDService.FromHash(sid));
@@ -156,8 +156,8 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> GetPlaylists()
         {
             var userId = GetUserId();
-            var result = await db.PlayLists.Where(p =>p.Owner == userId).Include(p => p.Songs).ToListAsync();
-            return Ok(result.Select(p=>DBToApiPlaylist(p)));
+            var result = await db.PlayLists.Where(p => p.Owner == userId).Include(p => p.Songs).ToListAsync();
+            return Ok(result.Select(p => DBToApiPlaylist(p)));
         }
 
         private PlayList DBToApiPlaylist(Playlist result)
@@ -165,7 +165,19 @@ namespace Coflnet.SongVoter.Controllers
             return new Models.PlayList()
             {
                 Id = iDService.ToHash(result.Id),
-                Songs = result.Songs.Select(s => iDService.ToHash(s.Id)).ToList(),
+                Songs = result.Songs.Select(s => new Models.Song()
+                {
+                    Id = iDService.ToHash(s.Id),
+                    Title = s.Title,
+                    Occurences = s.ExternalSongs.Select(o => new Models.ExternalSong()
+                    {
+                        Platform = (Models.ExternalSong.PlatformEnum)o.Platform,
+                        ExternalId = o.ExternalId,
+                        Title = o.Title,
+                        Artist = o.Artist,
+                        Thumbnail = o.ThumbnailUrl
+                    }).ToList()
+                }).ToList(),
                 Title = result.Title
             };
         }
