@@ -70,7 +70,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 return NotFound("list not found");
             }
-            var song = await db.Songs.FindAsync(iDService.FromHash(songId));
+            var song = await db.Songs.FindAsync((int)iDService.FromHash(songId));
             if (song == null)
             {
                 return NotFound("song not found");
