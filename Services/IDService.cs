@@ -17,9 +17,9 @@ namespace Coflnet.SongVoter.Service
             hasher = new Hashids(config["hashids:salt"]);
         }
 
-        public long FromHash(string hash)
+        public int FromHash(string hash)
         {
-            return FromHashMany(hash)[0];
+            return (int)FromHashMany(hash)[0];
         }
         public long[] FromHashMany(string hash)
         {
