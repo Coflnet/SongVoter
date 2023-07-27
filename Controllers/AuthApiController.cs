@@ -138,7 +138,10 @@ namespace Coflnet.SongVoter.Controllers
                         ExternalId = me.Id,
                         Platform = Platforms.Spotify,
                         // add refresh token
-                        AccessToken = token.AccessToken,
+                        AccessToken = token.AccessToken, 
+                        RefreshToken = token.RefreshToken,
+                        Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn),
+                        AuthCode = authCode.Code
                     } }
                     };
                     db.Add(user);
@@ -152,7 +155,6 @@ namespace Coflnet.SongVoter.Controllers
                 Console.WriteLine(JsonConvert.SerializeObject(e.Response));
                 return this.Problem(e.Message);
             }
-
         }
 
         private async Task<AuthToken> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
