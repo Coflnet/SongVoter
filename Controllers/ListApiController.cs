@@ -61,7 +61,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("AddSongToList")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] string songId)
+        public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] SongId songId)
         {
             var dbId = iDService.FromHash(listId);
             var userId = GetUserId();
@@ -70,7 +70,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 return NotFound("list not found");
             }
-            var song = await db.Songs.FindAsync((int)iDService.FromHash(songId));
+            var song = await db.Songs.FindAsync((int)iDService.FromHash(songId.Id));
             if (song == null)
             {
                 return NotFound("song not found");

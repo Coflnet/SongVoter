@@ -19,7 +19,7 @@ using Newtonsoft.Json;
 using Coflnet.SongVoter.Converters;
 
 namespace Coflnet.SongVoter.Models
-{ 
+{
     public class PlayListCreate 
     {
         /// <summary>
