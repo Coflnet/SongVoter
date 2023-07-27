@@ -69,13 +69,15 @@ namespace Coflnet.SongVoter.Controllers
             if (currentParty != null)
                 return BadRequest("You are already in a party, leave it first");
 
+            var user = await db.Users.FindAsync(userId);
             var party = new DBModels.Party()
             {
-                Creator = db.Users.Find(userId),
+                Creator = user,
                 Name = partyCreateOptions.Name ?? "My party"
             };
             this.db.Add(party);
             await this.db.SaveChangesAsync();
+            await AddUserSongsToParty(party, user);
 
             return base.Ok(ToExternalParty(party));
         }
@@ -200,6 +202,17 @@ namespace Coflnet.SongVoter.Controllers
         {
             var party = await GetParty(partyId);
             var user = await CurrentUser();
+            await AddUserSongsToParty(party, user);
+            var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
+            userWithParty.Parties.Clear();
+            userWithParty.Parties.Add(party);
+            user.Parties.Add(party);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        private async Task AddUserSongsToParty(Party party, User user)
+        {
             var list = await db.PlayLists.Where(pl => pl.Owner == user.Id).FirstAsync();
             foreach (var item in list.Songs)
             {
@@ -209,12 +222,6 @@ namespace Coflnet.SongVoter.Controllers
                 song.DownVoters.Add(user);
                 db.Update(song);
             }
-            var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
-            userWithParty.Parties.Clear();
-            userWithParty.Parties.Add(party);
-            user.Parties.Add(party);
-            await db.SaveChangesAsync();
-            return Ok();
         }
 
         /// <summary>
