@@ -20,6 +20,23 @@ using Coflnet.SongVoter.Converters;
 
 namespace Coflnet.SongVoter.Models
 { 
+    public class PartyPlaylistEntry
+    {
+        public enum SelfVoteState
+        {
+            [EnumMember(Value = "none")]
+            None,
+            [EnumMember(Value = "up")]
+            Up,
+            [EnumMember(Value = "down")]
+            Down
+        }
+
+        public SelfVoteState SelfVote { get; set; }
+        public Song Song { get; set; }
+        public int UpVotes { get; set; }
+        public int DownVotes { get; set; }
+    }
     /// <summary>
     /// 
     /// </summary>

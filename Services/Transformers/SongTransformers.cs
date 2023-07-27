@@ -28,5 +28,18 @@ namespace Coflnet.SongVoter.Transformers
                 }).ToList()
             };
         }
+
+        public Models.PartyPlaylistEntry ToApiPartyPlaylistEntry(DBModels.PartySong db, int userId)
+        {
+            return new Models.PartyPlaylistEntry()
+            {
+                DownVotes = db.DownVoters.Count(),
+                UpVotes = db.UpVoters.Count(),
+                SelfVote =  db.UpVoters.Any(u=>u.Id == userId) ? Models.PartyPlaylistEntry.SelfVoteState.Up :
+                            db.DownVoters.Any(u=>u.Id == userId)  ? Models.PartyPlaylistEntry.SelfVoteState.Down :
+                            Models.PartyPlaylistEntry.SelfVoteState.None,
+                Song = ToApiSong(db.Song)
+            };
+        }
     }
 }

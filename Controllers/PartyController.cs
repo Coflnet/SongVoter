@@ -311,6 +311,21 @@ namespace Coflnet.SongVoter.Controllers
                                 .FirstOrDefaultAsync();
             return Ok(songTransformer.ToApiSong(next));
         }
+        [HttpGet]
+        [Route("/party/playlist")]
+        [Authorize]
+        public async Task<ActionResult<List<Models.PartyPlaylistEntry>>> GetSongList()
+        {
+            var pId = (await GetCurrentParty()).Id;
+            var list = await db.PartySongs.Where(ps => ps.Party.Id == pId)
+                                .Include(ps => ps.DownVoters)
+                                .Include(ps => ps.UpVoters)
+                                .Include(ps => ps.Song).ThenInclude(s => s.ExternalSongs)
+                                .OrderByDescending(ps => 1 + ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
+                                .ToListAsync();
+            var userId = idService.UserId(this);
+            return Ok(list.Select(l => songTransformer.ToApiPartyPlaylistEntry(l, userId)).ToList());
+        }
 
         /// <summary>
         /// Marks a song as played
