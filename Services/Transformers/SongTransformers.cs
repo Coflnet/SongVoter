@@ -14,6 +14,8 @@ namespace Coflnet.SongVoter.Transformers
 
         public Models.Song ToApiSong(DBModels.Song db)
         {
+            if(db == null)
+                return null;
             return new Models.Song()
             {
                 Id = iDService.ToHash(db.Id),
@@ -31,6 +33,8 @@ namespace Coflnet.SongVoter.Transformers
 
         public Models.PartyPlaylistEntry ToApiPartyPlaylistEntry(DBModels.PartySong db, int userId)
         {
+            if(db == null)
+                return null;
             return new Models.PartyPlaylistEntry()
             {
                 DownVotes = db.DownVoters.Count(),
