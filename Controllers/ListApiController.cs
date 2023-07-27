@@ -167,11 +167,11 @@ namespace Coflnet.SongVoter.Controllers
             return new Models.PlayList()
             {
                 Id = iDService.ToHash(result.Id),
-                Songs = result.Songs.Select(s => new Models.Song()
+                Songs = result.Songs?.Select(s => new Models.Song()
                 {
                     Id = iDService.ToHash(s.Id),
                     Title = s.Title,
-                    Occurences = s.ExternalSongs.Select(o => new Models.ExternalSong()
+                    Occurences = s.ExternalSongs?.Select(o => new Models.ExternalSong()
                     {
                         Platform = (Models.ExternalSong.PlatformEnum)o.Platform,
                         ExternalId = o.ExternalId,
