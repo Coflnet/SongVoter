@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
+using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,5 +57,18 @@ public class UserController : ControllerBase
             return NotFound();
         }
         return token.AccessToken;
+    }
+
+    [HttpGet]
+    [Route("/user/info")]
+    public async Task<UserInfo> GetUserInfo()
+    {
+        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
+        return new UserInfo()
+        {
+            UserId = idService.ToHash(user.Id),
+            UserName = user.Name,
+            SpotifyToken = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify)?.AccessToken
+        };
     }
 }
