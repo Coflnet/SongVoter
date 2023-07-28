@@ -37,7 +37,6 @@ namespace Coflnet.SongVoter.Controllers
             this.db = data;
             this.config = config;
             this.idService = idService;
-            Console.WriteLine($"Token for root user {GetTokenForTestUser().Result.Token}");
         }
 
         /// <summary>
@@ -205,15 +204,15 @@ namespace Coflnet.SongVoter.Controllers
         [Consumes("application/json")]
         public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
         {
+            AuthToken internalToken = await GetTokenForTestUser();
             var savedToken = config["test:authtoken"];
-            Console.WriteLine("Creating token for test user " + savedToken);
+            Console.WriteLine($"Token for test user {internalToken?.Token}");
             if (string.IsNullOrEmpty(savedToken))
                 return this.Problem("test mode not active, please set test:authtoken");
 
             if (savedToken != token.Token)
                 return this.Problem("invalid token passed");
 
-            AuthToken internalToken = await GetTokenForTestUser();
 
             return Ok(internalToken);
         }
