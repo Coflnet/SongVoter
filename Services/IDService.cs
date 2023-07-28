@@ -19,6 +19,8 @@ namespace Coflnet.SongVoter.Service
 
         public int FromHash(string hash)
         {
+            if(hash == null)
+                return -1;
             return (int)FromHashMany(hash)[0];
         }
         public long[] FromHashMany(string hash)
@@ -35,7 +37,7 @@ namespace Coflnet.SongVoter.Service
         public int UserId(ControllerBase controller)
         {
             System.Console.WriteLine("claims:\n--------------------\n" + JsonConvert.SerializeObject(controller.User.Claims.Select(c=>c.Value)));
-            return (int)FromHash(controller.User.Claims.Where(c => c.Type == "uid").First().Value);
+            return (int)FromHash(controller.User.Claims.Where(c => c.Type == "uid").FirstOrDefault()?.Value);
         }
     }
 

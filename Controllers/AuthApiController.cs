@@ -126,28 +126,44 @@ namespace Coflnet.SongVoter.Controllers
                             ));
                 var spotify = new SpotifyClient(token.AccessToken);
                 var me = await spotify.UserProfile.Current();
-                var userId = db.Users
-                    .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
-                    .Select(u => u.Id).FirstOrDefault();
-                if (userId == 0)
+                var userId = idService.UserId(this);
+                if (userId <= 0)
+                    userId = db.Users
+                        .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
+                        .Select(u => u.Id).FirstOrDefault();
+                if (userId <= 0)
                 {
-                    var user = new User()
+                    var newUser = new User()
                     {
-                        Name = me.DisplayName,
-                        Tokens = new List<Oauth2Token>() { new Oauth2Token() {
+                        Name = me.DisplayName
+                    };
+                    db.Add(newUser);
+                    await db.SaveChangesAsync();
+                    userId = newUser.Id;
+                }
+                var user = await db.Users.Where(u => u.Id == userId).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
+                var spotifyToken = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
+                if (spotifyToken == null)
+                {
+                    spotifyToken = new Oauth2Token()
+                    {
                         ExternalId = me.Id,
                         Platform = Platforms.Spotify,
                         // add refresh token
-                        AccessToken = token.AccessToken, 
+                        AccessToken = token.AccessToken,
                         RefreshToken = token.RefreshToken,
                         Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn),
-                        AuthCode = authCode.Code
-                    } }
+                        AuthCode = authCode.Code,
                     };
-                    db.Add(user);
-                    await db.SaveChangesAsync();
-                    userId = user.Id;
+                    user.Tokens.Add(spotifyToken);
                 }
+                spotifyToken.AccessToken = token.AccessToken;
+                spotifyToken.RefreshToken = token.RefreshToken;
+                spotifyToken.Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
+                spotifyToken.AuthCode = authCode.Code;
+                db.Update(user);
+                await db.SaveChangesAsync();
+
                 return Ok(new { token = CreateTokenFor(userId) });
             }
             catch (SpotifyAPI.Web.APIException e)
