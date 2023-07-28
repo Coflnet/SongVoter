@@ -36,7 +36,7 @@ namespace Coflnet.SongVoter.Service
 
         public int UserId(ControllerBase controller)
         {
-            System.Console.WriteLine("claims:\n--------------------\n" + JsonConvert.SerializeObject(controller.User.Claims.Select(c=>c.Value)));
+            System.Console.WriteLine("claims:\n--------------------\n" + JsonConvert.SerializeObject(controller.User.Claims.Select(c=>c.Type + ": " + c.Value)));
             return (int)FromHash(controller.User.Claims.Where(c => c.Type == "uid").FirstOrDefault()?.Value);
         }
     }

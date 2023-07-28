@@ -37,7 +37,7 @@ namespace Coflnet.SongVoter.Controllers
             this.db = data;
             this.config = config;
             this.idService = idService;
-            Console.WriteLine($"Token for root user {CreateTokenFor(0)}");
+            Console.WriteLine($"Token for root user {GetTokenForTestUser().Result.Token}");
         }
 
         /// <summary>
@@ -213,14 +213,20 @@ namespace Coflnet.SongVoter.Controllers
             if (savedToken != token.Token)
                 return this.Problem("invalid token passed");
 
+            AuthToken internalToken = await GetTokenForTestUser();
 
+            return Ok(internalToken);
+        }
+
+        private async Task<AuthToken> GetTokenForTestUser()
+        {
             var payload = new GoogleJsonWebSignature.Payload()
             {
                 Subject = "2",
                 Name = "testUser"
             };
-
-            return Ok(await GetTokenForUser(payload));
+            var internalToken = await GetTokenForUser(payload);
+            return internalToken;
         }
 
         [HttpDelete]

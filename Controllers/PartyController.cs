@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
+using Coflnet.SongVoter.Middleware;
 using Coflnet.SongVoter.Service;
 using Coflnet.SongVoter.Transformers;
 using Microsoft.AspNetCore.Authorization;
@@ -65,11 +66,16 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> CreateParty(Models.PartyCreateOptions partyCreateOptions)
         {
             var userId = idService.UserId(this);
+            Console.WriteLine("user id: " + userId);
             var currentParty = await GetCurrentParty();
             if (currentParty != null)
                 return BadRequest("You are already in a party, leave it first");
 
-            var user = await db.Users.FindAsync(userId);
+            foreach (var item in db.Users.ToList())
+            {
+                Console.WriteLine("found user: " + Newtonsoft.Json.JsonConvert.SerializeObject(item, Newtonsoft.Json.Formatting.Indented));
+            }
+            var user = await db.Users.FindAsync(userId) ?? throw new ApiException(System.Net.HttpStatusCode.BadRequest, "User not found " + userId);
             var party = new DBModels.Party()
             {
                 Creator = user,
@@ -213,13 +219,14 @@ namespace Coflnet.SongVoter.Controllers
 
         private async Task AddUserSongsToParty(Party party, User user)
         {
-            var list = await db.PlayLists.Where(pl => pl.Owner == user.Id).FirstAsync();
+            var userId = user.Id;
+            var list = await db.PlayLists.Where(pl => pl.Owner == userId).Include(p=>p.Songs).FirstAsync();
             foreach (var item in list.Songs)
             {
                 // currently they are never removed
                 var song = await GetOrCreatePartySong(party.Id, item.Id);
                 song.UpVoters.Add(user);
-                song.DownVoters.Add(user);
+                //song.DownVoters.Add(user);
                 db.Update(song);
             }
         }
