@@ -87,12 +87,12 @@ namespace Coflnet.SongVoter.Controllers
                 ExternalId = track.Id,
                 Platform = Platforms.Spotify,
                 ThumbnailUrl = track.Album.Images.First().Url,
-                Title = track.Album.Name
+                Title = track.Name
             };
             return new DBModels.Song()
             {
                 ExternalSongs = new System.Collections.Generic.List<DBModels.ExternalSong>() { external },
-                Title = track.Album.Name
+                Title = track.Name
             }; ;
         }
 
