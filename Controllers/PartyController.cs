@@ -313,7 +313,7 @@ namespace Coflnet.SongVoter.Controllers
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "invite created")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Models.Song), description: "invite created")]
         public async Task<Models.Song> NextSong()
         {
             var pId = (await GetCurrentParty()).Id;
