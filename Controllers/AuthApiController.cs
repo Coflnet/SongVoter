@@ -213,7 +213,6 @@ namespace Coflnet.SongVoter.Controllers
             if (savedToken != token.Token)
                 return this.Problem("invalid token passed");
 
-
             return Ok(internalToken);
         }
 

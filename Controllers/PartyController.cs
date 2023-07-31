@@ -220,7 +220,7 @@ namespace Coflnet.SongVoter.Controllers
         private async Task AddUserSongsToParty(Party party, User user)
         {
             var userId = user.Id;
-            var list = await db.PlayLists.Where(pl => pl.Owner == userId).Include(p=>p.Songs).FirstAsync();
+            var list = await db.PlayLists.Where(pl => pl.Owner == userId).Include(p => p.Songs).FirstAsync();
             foreach (var item in list.Songs)
             {
                 // currently they are never removed
@@ -320,6 +320,7 @@ namespace Coflnet.SongVoter.Controllers
             var next = await db.PartySongs.Where(ps => ps.Party.Id == pId)
                                 .Include(ps => ps.DownVoters)
                                 .Include(ps => ps.UpVoters)
+                                .Include(ps => ps.Song).ThenInclude(s => s.ExternalSongs)
                                 .OrderByDescending(ps => 1 + ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
                                 .Select(ps => ps.Song)
                                 .FirstOrDefaultAsync();
