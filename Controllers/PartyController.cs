@@ -61,9 +61,9 @@ namespace Coflnet.SongVoter.Controllers
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
-        [SwaggerResponse(statusCode: 200, type: typeof(Party), description: "successful created")]
+        [SwaggerResponse(statusCode: 200, type: typeof(Models.Party), description: "successful created")]
         [SwaggerResponse(statusCode: 400, type: typeof(string), description: "invite link created")]
-        public async Task<IActionResult> CreateParty(Models.PartyCreateOptions partyCreateOptions)
+        public async Task<ActionResult<Models.Party>> CreateParty(Models.PartyCreateOptions partyCreateOptions)
         {
             var userId = idService.UserId(this);
             Console.WriteLine("user id: " + userId);
@@ -314,7 +314,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(Song), description: "invite created")]
-        public async Task<IActionResult> NextSong()
+        public async Task<Models.Song> NextSong()
         {
             var pId = (await GetCurrentParty()).Id;
             var next = await db.PartySongs.Where(ps => ps.Party.Id == pId)
@@ -324,7 +324,7 @@ namespace Coflnet.SongVoter.Controllers
                                 .OrderByDescending(ps => 1 + ps.UpVoters.Count - ps.DownVoters.Count - ps.PlayedTimes)
                                 .Select(ps => ps.Song)
                                 .FirstOrDefaultAsync();
-            return Ok(songTransformer.ToApiSong(next));
+            return songTransformer.ToApiSong(next);
         }
         [HttpGet]
         [Route("/party/playlist")]
