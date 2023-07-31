@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using SpotifyAPI.Web;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers;
@@ -14,10 +17,12 @@ public class UserController : ControllerBase
 {
     private readonly SVContext db;
     private IDService idService;
-    public UserController(SVContext data, IDService idService)
+    private IConfiguration config;
+    public UserController(SVContext data, IDService idService, IConfiguration config)
     {
         this.db = data;
         this.idService = idService;
+        this.config = config;
     }
     /// <summary>
     /// Updates the display name of the current user
@@ -55,6 +60,22 @@ public class UserController : ControllerBase
         if (token == null)
         {
             return NotFound();
+        }
+        // refresh token if needed
+        if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5))
+        {
+            var newToken = await new OAuthClient().RequestToken(
+                new AuthorizationCodeRefreshRequest(
+                                config["spotify:clientid"],
+                                config["spotify:clientsecret"], 
+                                token.RefreshToken)
+            );
+
+            token.AccessToken = newToken.AccessToken;
+            token.Expiration = DateTime.UtcNow.AddSeconds(newToken.ExpiresIn);
+            token.RefreshToken = newToken.RefreshToken;
+            db.Update(token);
+            await db.SaveChangesAsync();
         }
         return token.AccessToken;
     }
