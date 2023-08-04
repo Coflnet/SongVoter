@@ -98,37 +98,10 @@ namespace Coflnet.SongVoter.Controllers
                 Name = party.Name
             };
         }
-        /// <summary>
-        /// votes a song down so it is play later/not at all
-        /// </summary>
-        /// <param name="songId">ID of the song</param>
-        /// <response code="200">downvote accepted</response>
-        [HttpPost]
-        [Route("/party/downvote/{songId}")]
-        [Authorize]
-        [ValidateModelState]
-        [SwaggerOperation("DownvoteSong")]
-        public async Task<IActionResult> DownvoteSong([FromRoute(Name = "songId"), Required] string songId)
-        {
-            var currentParty = await GetCurrentParty();
-            var ps = await GetOrCreatePartySong(currentParty.Id, (int)idService.FromHash(songId));
-            var user = await CurrentUser();
-            ps.DownVoters.Add(user);
-            ps.UpVoters.Remove(user);
-            await db.SaveChangesAsync();
-            return Ok();
-        }
 
         private async Task<User> CurrentUser()
         {
             return await db.Users.FindAsync((int)idService.UserId(this));
-        }
-
-        private async Task<PartySong> GetOrCreatePartySong(string partyId, string songId)
-        {
-            var pId = (int)idService.FromHash(partyId);
-            var sId = (int)idService.FromHash(songId);
-            return await GetOrCreatePartySong(pId, sId);
         }
 
         private async Task<PartySong> GetOrCreatePartySong(int pId, int sId)
@@ -391,20 +364,46 @@ namespace Coflnet.SongVoter.Controllers
         /// votes a song up so it is play sooner
         /// </summary>
         /// <remarks>Adds an upvote to an song wich causes it to be played sooner. Also adds new songs to a party</remarks>
-        /// <param name="partyId">ID of party</param>
         /// <param name="songId">ID of the song to upvote</param>
         /// <response code="200">upvoted</response>
         [HttpPost]
-        [Route("/party/{partyId}/upvote/{songId}")]
+        [Route("/party/upvote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("UpvoteSong")]
-        public async Task<IActionResult> UpvoteSong([FromRoute(Name = "partyId"), Required] string partyId, [FromRoute(Name = "songId"), Required] string songId)
+        public async Task<IActionResult> UpvoteSong([FromRoute(Name = "songId"), Required] string songId)
         {
-            var ps = await GetOrCreatePartySong(partyId, songId);
+            var ps = await GetOrCreatePartySong(songId);
             var user = await CurrentUser();
             ps.DownVoters.Remove(user);
             ps.UpVoters.Add(user);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        private async Task<PartySong> GetOrCreatePartySong(string songId)
+        {
+            var currentParty = await GetCurrentParty();
+            var ps = await GetOrCreatePartySong(currentParty.Id, (int)idService.FromHash(songId));
+            return ps;
+        }
+
+        /// <summary>
+        /// votes a song down so it is play later/not at all
+        /// </summary>
+        /// <param name="songId">ID of the song</param>
+        /// <response code="200">downvote accepted</response>
+        [HttpPost]
+        [Route("/party/downvote/{songId}")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("DownvoteSong")]
+        public async Task<IActionResult> DownvoteSong([FromRoute(Name = "songId"), Required] string songId)
+        {
+            var ps = await GetOrCreatePartySong(songId);
+            var user = await CurrentUser();
+            ps.DownVoters.Add(user);
+            ps.UpVoters.Remove(user);
             await db.SaveChangesAsync();
             return Ok();
         }
