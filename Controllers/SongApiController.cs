@@ -184,6 +184,16 @@ namespace Coflnet.SongVoter.Controllers
                 }
                 await db.SaveChangesAsync();
             }
+            // update song titles 
+            var songs = await db.ExternalSongs.Where(s => ids.Contains(s.ExternalId)).ToListAsync();
+            foreach (var song in songs)
+            {
+                var item = response.Items.First(i => i.Id.VideoId == song.ExternalId);
+                song.Title = item.Snippet.Title;
+                song.ThumbnailUrl = (item.Snippet?.Thumbnails?.Standard ?? item.Snippet?.Thumbnails?.High)?.Url;
+                song.Artist = item.Snippet.ChannelTitle;
+            }
+            await db.SaveChangesAsync();
 
             // search for song on spotify api
             var config = SpotifyClientConfig
@@ -197,13 +207,24 @@ namespace Coflnet.SongVoter.Controllers
             var spotifyExisting = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).Select(e => e.ExternalId).ToListAsync();
             if (spotifyExisting.Count != spotifyIds.Count())
             {
-                foreach (var item in spotifyIds.Except(spotifyExisting))
+                // execute in parallel
+                Parallel.ForEach(spotifyIds.Except(spotifyExisting), async item =>
                 {
                     var songsToAdd = await GetSongFromSpotify(item);
                     db.Add(songsToAdd);
-                }
+                });
                 await db.SaveChangesAsync();
             }
+            // update song titles
+            var spotifySongs = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).ToListAsync();
+            foreach (var song in spotifySongs)
+            {
+                var item = spotifyResponse.Tracks.Items.First(i => i.Id == song.ExternalId);
+                song.Title = item.Name;
+                song.ThumbnailUrl = item.Album.Images.First().Url;
+                song.Artist = item.Artists.First().Name;
+            }
+            await db.SaveChangesAsync();
             return Ok(await SearchLocalDbFor(term));
         }
 
