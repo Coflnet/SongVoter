@@ -407,5 +407,25 @@ namespace Coflnet.SongVoter.Controllers
             await db.SaveChangesAsync();
             return Ok();
         }
+
+        /// <summary>
+        /// Remove vote from song
+        /// </summary>
+        /// <param name="songId">ID of the song</param>
+        /// <response code="200">vote removed</response>
+        [HttpPost]
+        [Route("/party/removeVote/{songId}")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("RemoveVote")]
+        public async Task<IActionResult> RemoveVote([FromRoute(Name = "songId"), Required] string songId)
+        {
+            var ps = await GetOrCreatePartySong(songId);
+            var user = await CurrentUser();
+            ps.DownVoters.Remove(user);
+            ps.UpVoters.Remove(user);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
     }
 }
