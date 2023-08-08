@@ -26,7 +26,8 @@ namespace Coflnet.SongVoter.Transformers
                     ExternalId = s.ExternalId,
                     Platform = (Models.ExternalSong.PlatformEnum)s.Platform,
                     Thumbnail = s.ThumbnailUrl,
-                    Title = s.Title
+                    Title = s.Title,
+                    Duration = s.Duration
                 }).ToList()
             };
         }

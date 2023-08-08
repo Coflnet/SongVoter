@@ -50,6 +50,11 @@ namespace Coflnet.SongVoter.Models
         [Required]
         [DataMember(Name="externalId", EmitDefaultValue=false)]
         public string ExternalId { get; set; }
+        /// <summary>
+        /// Gets or Sets the Duration
+        /// </summary>
+        [DataMember(Name="duration", EmitDefaultValue=false)]
+        public TimeSpan Duration { get; set; }
 
 
         /// <summary>

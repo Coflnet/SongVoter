@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Authorization;
 using Coflnet.SongVoter.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -87,7 +88,8 @@ namespace Coflnet.SongVoter.Controllers
                 ExternalId = track.Id,
                 Platform = Platforms.Spotify,
                 ThumbnailUrl = track.Album.Images.First().Url,
-                Title = track.Name
+                Title = track.Name,
+                Duration = TimeSpan.FromMilliseconds(track.DurationMs)
             };
             return new DBModels.Song()
             {
@@ -122,7 +124,9 @@ namespace Coflnet.SongVoter.Controllers
                         ExternalId = ytVideo.Id,
                         Platform = Platforms.Youtube,
                         ThumbnailUrl = (ytVideo.Snippet?.Thumbnails?.Standard ?? ytVideo.Snippet?.Thumbnails?.High)?.Url,
-                        Title = ytVideo.Snippet.Title
+                        Title = ytVideo.Snippet.Title,
+                        // sample PT2M2S
+                        Duration = System.Xml.XmlConvert.ToTimeSpan(ytVideo.ContentDetails.Duration)
                     };
 
                     return new DBModels.Song()
@@ -208,7 +212,7 @@ namespace Coflnet.SongVoter.Controllers
             if (spotifyExisting.Count != spotifyIds.Count())
             {
                 // execute in parallel
-                Parallel.ForEach(spotifyIds.Except(spotifyExisting), async item =>
+                await Parallel.ForEachAsync(spotifyIds.Except(spotifyExisting), async (item,ct) =>
                 {
                     var songsToAdd = await GetSongFromSpotify(item);
                     db.Add(songsToAdd);
@@ -223,6 +227,7 @@ namespace Coflnet.SongVoter.Controllers
                 song.Title = item.Name;
                 song.ThumbnailUrl = item.Album.Images.First().Url;
                 song.Artist = item.Artists.First().Name;
+                song.Duration = TimeSpan.FromMilliseconds(item.DurationMs);
             }
             await db.SaveChangesAsync();
             return Ok(await SearchLocalDbFor(term));
@@ -231,7 +236,7 @@ namespace Coflnet.SongVoter.Controllers
         private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term)
         {
             var songs = await this.db
-                .Songs.Where(s => s.Title.Contains(term))
+                .Songs.Where(s => s.Title.ToLower().Contains(term.ToLower()))
                 .Include(s => s.ExternalSongs)
                 .Take(20)
                 .ToListAsync();
