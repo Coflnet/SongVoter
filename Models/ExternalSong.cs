@@ -54,7 +54,7 @@ namespace Coflnet.SongVoter.Models
         /// Gets or Sets the Duration
         /// </summary>
         [DataMember(Name="duration", EmitDefaultValue=false)]
-        public TimeSpan Duration { get; set; }
+        public int DurationMs { get; set; }
 
 
         /// <summary>
