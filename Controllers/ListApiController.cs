@@ -94,6 +94,8 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("RemoveSongFromList")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
+        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
+        [SwaggerResponse(statusCode: 400, type: typeof(string), description: "song not in list")]
         public async Task<IActionResult> RemoveSongFromList([FromRoute(Name = "listId"), Required] string listId, [FromRoute(Name = "songId"), Required] string songId)
         {
             var dbId = iDService.FromHash(listId);
@@ -114,7 +116,7 @@ namespace Coflnet.SongVoter.Controllers
             }
             list.Songs.Remove(song);
             await db.SaveChangesAsync();
-            return Ok();
+            return Ok(DBToApiPlaylist(list));
         }
 
         private long GetUserId()
