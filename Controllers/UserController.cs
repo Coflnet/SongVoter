@@ -56,10 +56,20 @@ public class UserController : ControllerBase
         {
             return NotFound();
         }
+        Oauth2Token token = await GetUpToDateToken(user);
+        if (token == null)
+        {
+            throw new Core.ApiException("no_spotify_token", "No spotify token found");
+        }
+        return token.AccessToken;
+    }
+
+    private async Task<Oauth2Token> GetUpToDateToken(User user)
+    {
         var token = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
         if (token == null)
         {
-            return NotFound();
+            return null;
         }
         // refresh token if needed
         if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5))
@@ -67,7 +77,7 @@ public class UserController : ControllerBase
             var newToken = await new OAuthClient().RequestToken(
                 new AuthorizationCodeRefreshRequest(
                                 config["spotify:clientid"],
-                                config["spotify:clientsecret"], 
+                                config["spotify:clientsecret"],
                                 token.RefreshToken)
             );
 
@@ -77,7 +87,8 @@ public class UserController : ControllerBase
             db.Update(token);
             await db.SaveChangesAsync();
         }
-        return token.AccessToken;
+
+        return token;
     }
 
     [HttpGet]
@@ -85,11 +96,12 @@ public class UserController : ControllerBase
     public async Task<UserInfo> GetUserInfo()
     {
         var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
+        Oauth2Token token = await GetUpToDateToken(user);
         return new UserInfo()
         {
             UserId = idService.ToHash(user.Id),
             UserName = user.Name,
-            SpotifyToken = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify)?.AccessToken
+            SpotifyToken = token?.AccessToken
         };
     }
 }
