@@ -204,7 +204,7 @@ namespace Coflnet.SongVoter.Controllers
                           .CreateDefault()
                           .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
             var spotify = new SpotifyClient(config);
-            var query = new SearchRequest(SearchRequest.Types.Track, term);
+            var query = new SearchRequest(SearchRequest.Types.Track | SearchRequest.Types.Episode, term);
             query.Limit = 20;
             var spotifyResponse = await spotify.Search.Item(query);
             var spotifyIds = spotifyResponse.Tracks.Items.Select(i => i.Id);
