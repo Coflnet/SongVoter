@@ -9,6 +9,7 @@ using Coflnet.SongVoter.Service;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SpotifyAPI.Web;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -18,11 +19,13 @@ public class UserController : ControllerBase
     private readonly SVContext db;
     private IDService idService;
     private IConfiguration config;
-    public UserController(SVContext data, IDService idService, IConfiguration config)
+    private ILogger<UserController> logger;
+    public UserController(SVContext data, IDService idService, IConfiguration config, ILogger<UserController> logger)
     {
         this.db = data;
         this.idService = idService;
         this.config = config;
+        this.logger = logger;
     }
     /// <summary>
     /// Updates the display name of the current user
@@ -71,9 +74,14 @@ public class UserController : ControllerBase
         {
             return null;
         }
+        logger.LogInformation("Spotify token expires at {0} refresh token starts with {1}", token.Expiration, token.RefreshToken?.Substring(0, 5));
         // refresh token if needed
-        if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5) && token.RefreshToken != null)
+        if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5))
         {
+            if(token.RefreshToken == null)
+            {
+                throw new Core.ApiException("no_spotify_token", "No spotify refresh token found");
+            }
             var newToken = await new OAuthClient().RequestToken(
                 new AuthorizationCodeRefreshRequest(
                                 config["spotify:clientid"],
