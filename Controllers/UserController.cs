@@ -72,7 +72,7 @@ public class UserController : ControllerBase
             return null;
         }
         // refresh token if needed
-        if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5))
+        if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5) && token.RefreshToken != null)
         {
             var newToken = await new OAuthClient().RequestToken(
                 new AuthorizationCodeRefreshRequest(

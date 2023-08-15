@@ -24,6 +24,7 @@ using SpotifyAPI.Web;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -32,11 +33,13 @@ namespace Coflnet.SongVoter.Controllers
         private readonly SVContext db;
         private readonly IConfiguration config;
         private readonly IDService idService;
-        public AuthApiControllerImpl(SVContext data, IConfiguration config, IDService idService)
+        private readonly ILogger<AuthApiControllerImpl> logger;
+        public AuthApiControllerImpl(SVContext data, IConfiguration config, IDService idService, ILogger<AuthApiControllerImpl> logger)
         {
             this.db = data;
             this.config = config;
             this.idService = idService;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -123,6 +126,7 @@ namespace Coflnet.SongVoter.Controllers
                                 authCode.Code,
                                 uri
                             ));
+                logger.LogInformation($"Got spotify token {token.AccessToken} {token.RefreshToken} {token.ExpiresIn}");
                 var spotify = new SpotifyClient(token.AccessToken);
                 var me = await spotify.UserProfile.Current();
                 var userId = idService.UserId(this);
@@ -157,6 +161,7 @@ namespace Coflnet.SongVoter.Controllers
                     user.Tokens.Add(spotifyToken);
                 }
                 spotifyToken.AccessToken = token.AccessToken;
+                logger.LogInformation($"Refresh token {token.RefreshToken} for {me.DisplayName}");
                 spotifyToken.RefreshToken = token.RefreshToken;
                 spotifyToken.Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
                 spotifyToken.AuthCode = authCode.Code;
