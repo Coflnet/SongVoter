@@ -40,14 +40,15 @@ namespace Coflnet.SongVoter.Controllers
         {
             var userId = GetUserId();
             var songIds = playList.Songs.Select(sid => iDService.FromHash(sid));
-            db.Add(new DBModels.Playlist()
+            var playlist = new DBModels.Playlist()
             {
                 Owner = (int)userId,
                 Title = playList.Title,
                 Songs = db.Songs.Where(s => songIds.Contains(s.Id)).ToList()
-            });
+            };
+            db.Add(playlist);
             await db.SaveChangesAsync();
-            return Ok();
+            return Ok(DBToApiPlaylist(playlist));
         }
 
         /// <summary>
@@ -61,6 +62,7 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("AddSongToList")]
         [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
+        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
         public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] SongId songId)
         {
             var dbId = iDService.FromHash(listId);
@@ -77,7 +79,7 @@ namespace Coflnet.SongVoter.Controllers
             }
             list.Songs.Add(song);
             await db.SaveChangesAsync();
-            return Ok();
+            return Ok(DBToApiPlaylist(list));
         }
 
         /// <summary>
