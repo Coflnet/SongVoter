@@ -37,22 +37,22 @@ namespace Coflnet.SongVoter.Models
         /// The platform of this song
         /// </summary>
         /// <value>The platform of this song</value>
-        [TypeConverter(typeof(CustomEnumConverter<PlatformEnum>))]
+        [TypeConverter(typeof(CustomEnumConverter<SongPlatform>))]
         [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public enum PlatformEnum
+        public enum SongPlatform
         {
             
             /// <summary>
             /// Enum YoutubeEnum for youtube
             /// </summary>
             [EnumMember(Value = "youtube")]
-            YoutubeEnum = 1,
+            Youtube = 1,
             
             /// <summary>
             /// Enum SpotifyEnum for spotify
             /// </summary>
             [EnumMember(Value = "spotify")]
-            SpotifyEnum = 2
+            Spotify = 2
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Coflnet.SongVoter.Models
         /// </summary>
         /// <value>The platform of this song</value>
         [DataMember(Name="platform", EmitDefaultValue=false)]
-        public PlatformEnum Platform { get; set; }
+        public SongPlatform Platform { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object

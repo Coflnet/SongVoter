@@ -57,9 +57,9 @@ namespace Coflnet.SongVoter.Controllers
             if (db.ExternalSongs.Where(s => s.ExternalId == body.ExternalId).Any())
                 return StatusCode(409, "Song already exists");
             IEnumerable<DBModels.Song> songs;
-            if (body.Platform == SongCreation.PlatformEnum.SpotifyEnum)
+            if (body.Platform == SongCreation.SongPlatform.Spotify)
                 songs = new DBModels.Song[] { await GetSongFromSpotify(null) };
-            else if (body.Platform == SongCreation.PlatformEnum.YoutubeEnum)
+            else if (body.Platform == SongCreation.SongPlatform.Youtube)
                 songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId });
             else
                 throw new ApiException(System.Net.HttpStatusCode.BadRequest, "The field `platform` in your request is invalid");
@@ -137,7 +137,7 @@ namespace Coflnet.SongVoter.Controllers
                 }
                 catch (System.Exception e)
                 {
-                    logger.LogError(e, "Error while parsing youtube video " + JsonConvert.SerializeObject(ytVideo,Formatting.Indented));
+                    logger.LogError(e, "Error while parsing youtube video " + JsonConvert.SerializeObject(ytVideo, Formatting.Indented));
                     throw;
                 }
             });
@@ -155,10 +155,10 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("FindSong")]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Models.Song>), description: "successful operation")]
-        public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term)
+        public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term, SongCreation.SongPlatform platforms = SongCreation.SongPlatform.Youtube | SongCreation.SongPlatform.Spotify)
         {
-            var localRes = await SearchLocalDbFor(term);
-            if(localRes.Count() > 12)
+            var localRes = await SearchLocalDbFor(term, platforms);
+            if (localRes.Count() > 12)
             {
                 return Ok(localRes);
             }
@@ -197,7 +197,6 @@ namespace Coflnet.SongVoter.Controllers
                 song.ThumbnailUrl = (item.Snippet?.Thumbnails?.Standard ?? item.Snippet?.Thumbnails?.High)?.Url;
                 song.Artist = item.Snippet.ChannelTitle;
             }
-            await db.SaveChangesAsync();
 
             // search for song on spotify api
             var config = SpotifyClientConfig
@@ -212,12 +211,11 @@ namespace Coflnet.SongVoter.Controllers
             if (spotifyExisting.Count != spotifyIds.Count())
             {
                 // execute in parallel
-                await Parallel.ForEachAsync(spotifyIds.Except(spotifyExisting), async (item,ct) =>
+                await Parallel.ForEachAsync(spotifyIds.Except(spotifyExisting), async (item, ct) =>
                 {
                     var songsToAdd = await GetSongFromSpotify(item);
                     db.Add(songsToAdd);
                 });
-                await db.SaveChangesAsync();
             }
             // update song titles
             var spotifySongs = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).ToListAsync();
@@ -230,13 +228,14 @@ namespace Coflnet.SongVoter.Controllers
                 song.Duration = TimeSpan.FromMilliseconds(item.DurationMs);
             }
             await db.SaveChangesAsync();
-            return Ok(await SearchLocalDbFor(term));
+            return Ok(await SearchLocalDbFor(term, platforms));
         }
 
-        private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term)
+        private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term, SongCreation.SongPlatform platforms)
         {
             var songs = await this.db
                 .Songs.Where(s => s.Title.ToLower().Contains(term.ToLower()))
+                .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongCreation.SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongCreation.SongPlatform.Spotify))))
                 .Include(s => s.ExternalSongs)
                 .Take(20)
                 .ToListAsync();
