@@ -1,7 +1,10 @@
+using System;
+
 namespace Coflnet.SongVoter.DBModels;
 /// <summary>
 /// 
 /// </summary>
+[Flags]
 public enum Platforms
 {
     /// <summary>
@@ -15,5 +18,9 @@ public enum Platforms
     /// <summary>
     /// Songs from spotify
     /// </summary>
-    Spotify
+    Spotify,
+    /// <summary>
+    /// Placeholder for the next platform, marking that this is a flag enum
+    /// </summary>
+    Next = 4
 }

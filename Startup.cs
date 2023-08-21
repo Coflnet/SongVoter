@@ -149,6 +149,7 @@ namespace Coflnet.SongVoter
             services.AddSingleton<IDService>();
             services.AddHealthChecks();
             services.AddCoflnetCore();
+            services.AddHealthChecks().AddCheck<DbHealthCheck>("db_health_check");
 
             Console.WriteLine("registered all");
         }
