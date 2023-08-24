@@ -109,7 +109,8 @@ public class UserController : ControllerBase
         {
             UserId = idService.ToHash(user.Id),
             UserName = user.Name,
-            SpotifyToken = token?.AccessToken
+            SpotifyToken = token?.AccessToken,
+            SpotifyTokenExpiration = token?.Expiration
         };
     }
 }
