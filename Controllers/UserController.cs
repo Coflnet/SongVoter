@@ -113,4 +113,24 @@ public class UserController : ControllerBase
             SpotifyTokenExpiration = token?.Expiration
         };
     }
+
+    /// <summary>
+    /// Disconnects spotify from the current user
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="Core.ApiException"></exception>
+    [HttpDelete]
+    [Route("/user/spotify")]
+    public async Task<UserInfo> DisconnectSpotify()
+    {
+        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
+        var token = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
+        if (token == null)
+        {
+            throw new Core.ApiException("no_spotify_token", "No spotify token found");
+        }
+        db.Remove(token);
+        await db.SaveChangesAsync();
+        return await GetUserInfo();
+    }
 }
