@@ -79,7 +79,8 @@ namespace Coflnet.SongVoter.Controllers
             var party = new DBModels.Party()
             {
                 Creator = user,
-                Name = partyCreateOptions.Name ?? "My party"
+                Name = partyCreateOptions.Name ?? "My party",
+                SupportedPlatforms = partyCreateOptions.SupportedPlatforms
             };
             this.db.Add(party);
             await this.db.SaveChangesAsync();

@@ -16,6 +16,7 @@ namespace Coflnet.SongVoter.Transformers
         {
             if(db == null)
                 return null;
+            System.Console.WriteLine($"lookup: {db.Lookup}");
             return new Models.Song()
             {
                 Id = iDService.ToHash(db.Id),

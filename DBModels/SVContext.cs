@@ -32,6 +32,9 @@ namespace Coflnet.SongVoter.DBModels
             modelBuilder.Entity<Party>()
                 .HasMany(p => p.Members)
                 .WithMany(u => u.Parties);
+
+            modelBuilder.Entity<Song>(c => 
+                c.HasIndex(c => c.Lookup));
         }
     }
 }

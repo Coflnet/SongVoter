@@ -7,6 +7,7 @@ namespace Coflnet.SongVoter.DBModels
     {
         public int Id { get; set; }
         public User Creator { get; set; }
+        public Platforms SupportedPlatforms { get; set; }
         [MaxLength(30)]
         public string Name { get; set; }
         public List<User> Members { get; set; }

@@ -10,6 +10,12 @@ namespace Coflnet.SongVoter.DBModels
         /// </summary>
         /// <value></value>
         public string Title { get; set; }
+        /// <summary>
+        /// Combined text for full text song search, max 200 characters
+        /// </summary>
+        [System.ComponentModel.DataAnnotations.MaxLength(200)]
+        [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "varchar(200)")]
+        public string Lookup { get; set; }
 
         public List<ExternalSong> ExternalSongs { get; set; }
         /// <summary>

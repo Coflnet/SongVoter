@@ -21,5 +21,9 @@ public class ExternalSong
     /// how long the song plays
     /// </summary>
     public TimeSpan Duration { get; set; }
+    /// <summary>
+    /// Internal metric to determine how often this song has been played and sort search
+    /// </summary>
+    public long PlayCounter { get; set; }
 
 }
