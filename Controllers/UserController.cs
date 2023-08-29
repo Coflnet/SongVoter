@@ -80,7 +80,10 @@ public class UserController : ControllerBase
         {
             if(token.RefreshToken == null)
             {
-                throw new Core.ApiException("no_spotify_token", "No spotify refresh token found");
+                token.AccessToken = null;
+                db.Update(token);
+                await db.SaveChangesAsync();
+                return null;
             }
             var newToken = await new OAuthClient().RequestToken(
                 new AuthorizationCodeRefreshRequest(
@@ -91,7 +94,8 @@ public class UserController : ControllerBase
 
             token.AccessToken = newToken.AccessToken;
             token.Expiration = DateTime.UtcNow.AddSeconds(newToken.ExpiresIn);
-            token.RefreshToken = newToken.RefreshToken;
+            token.RefreshToken = newToken.RefreshToken ?? token.RefreshToken;
+            logger.LogInformation($"New token info: {token.AccessToken} expires at {token.Expiration} refresh token starts with {token.RefreshToken?.Substring(0, 5)}");
             db.Update(token);
             await db.SaveChangesAsync();
         }

@@ -14,7 +14,7 @@ namespace Coflnet.SongVoter.Service
         public IDService(IConfiguration config)
         {
             this.config = config;
-            hasher = new Hashids(config["hashids:salt"]);
+            hasher = new Hashids(config["hashids:salt"], 6);
         }
 
         public int FromHash(string hash)
