@@ -34,6 +34,7 @@ namespace Coflnet.SongVoter.Controllers
         private IConfiguration config;
         private ILogger<SongApiControllerImpl> logger;
         private SongTransformer transformer;
+        private SpotifyClient spotifyClient;
         public SongApiControllerImpl(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer, ILogger<SongApiControllerImpl> logger)
         {
             this.db = data;
@@ -77,12 +78,9 @@ namespace Coflnet.SongVoter.Controllers
 
         private async Task<DBModels.Song> GetSongFromSpotify(string trackId, string searchTerm)
         {
-            var config = SpotifyClientConfig
-                          .CreateDefault()
-                          .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
-            var spotify = new SpotifyClient(config);
+            SpotifyClient spotify = GetSpotifyclient();
 
-            var track = await spotify.Tracks.Get(trackId);
+            var track = await spotify.Tracks.Get(trackId).ConfigureAwait(false);
 
             var external = new DBModels.ExternalSong()
             {
@@ -100,6 +98,18 @@ namespace Coflnet.SongVoter.Controllers
                 Title = track.Name,
                 Lookup = ConvertLookupText(combined)
             }; ;
+        }
+
+        private SpotifyClient GetSpotifyclient()
+        {
+            if (spotifyClient != null)
+                return spotifyClient;
+            var config = SpotifyClientConfig
+                                      .CreateDefault()
+                                      .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
+            var spotify = new SpotifyClient(config);
+            spotifyClient = spotify;
+            return spotify;
         }
 
         public static string ConvertLookupText(string combined)
@@ -187,10 +197,7 @@ namespace Coflnet.SongVoter.Controllers
 
         private async Task<SearchResponse> SearchSpotify(string term)
         {
-            var config = SpotifyClientConfig
-                                      .CreateDefault()
-                                      .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
-            var spotify = new SpotifyClient(config);
+            var spotify = GetSpotifyclient();
             var query = new SearchRequest(SearchRequest.Types.Track | SearchRequest.Types.Episode, term);
             query.Limit = 20;
             var spotifyResponse = await spotify.Search.Item(query);
