@@ -34,8 +34,9 @@ namespace Coflnet.SongVoter.Migrations
                 table: "Songs",
                 column: "Lookup");
 
-            // set lookup to title + artist lowercase without spaces and special characters
-            migrationBuilder.Sql("UPDATE \"Songs\" SET \"Lookup\" = LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(\"Title\", ' ', ''), '!', ''), '?', ''), '.', ''), ',', ''), ';', ''), ':', ''), '-', ''), '_', ''), '(', ''), ')', ''), '[', ''), ']', '')) || LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(\"Artist\", ' ', ''), '!', ''), '?', ''), '.', ''), ',', ''), ';', ''), ':', ''), '-', ''), '_', ''), '(', ''), ')', ''), '[', ''), ']', ''))");
+            System.Threading.Thread.Sleep(1000);
+            // set lookup to title  lowercase without spaces where not set
+            // migrationBuilder.Sql("UPDATE \"Songs\" SET \"Lookup\" = LOWER(REPLACE(\"Title\", ' ', '')) WHERE \"Lookup\" IS NULL");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
