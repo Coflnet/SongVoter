@@ -171,22 +171,22 @@ namespace Coflnet.SongVoter.Controllers
         /// <summary>
         /// Joins a party
         /// </summary>
-        /// <param name="partyId">ID of party to join</param>
+        /// <param name="inviteId">ID of the invite link to join a party with</param>
         /// <response code="201">joined successfully</response>
         [HttpPost]
-        [Route("/party/{partyId}/join")]
+        [Route("/party/{inviteId}/join")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
-        public async Task<IActionResult> JoinParty([FromRoute(Name = "partyId"), Required] string partyId)
+        public async Task<IActionResult> JoinParty([FromRoute(Name = "inviteId"), Required] string inviteId)
         {
-            var party = await GetParty(partyId);
+            var invitedId = idService.FromHash(inviteId);
+            var party = await db.Invites.Where(i=>i.Id == invitedId).Include(i=>i.Party).Select(i => i.Party).FirstOrDefaultAsync();
             var user = await CurrentUser();
             await AddUserSongsToParty(party, user);
             var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
             userWithParty.Parties.Clear();
             userWithParty.Parties.Add(party);
-            user.Parties.Add(party);
             await db.SaveChangesAsync();
             return Ok();
         }
