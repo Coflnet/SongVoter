@@ -61,7 +61,7 @@ namespace Coflnet.SongVoter.Controllers
                 return StatusCode(409, "Song already exists");
             IEnumerable<DBModels.Song> songs;
             if (body.Platform == SongCreation.SongPlatform.Spotify)
-                songs = new DBModels.Song[] { await GetSongFromSpotify(null,null) };
+                songs = new DBModels.Song[] { await GetSongFromSpotify(null, null) };
             else if (body.Platform == SongCreation.SongPlatform.Youtube)
                 songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId }, null);
             else
@@ -81,7 +81,11 @@ namespace Coflnet.SongVoter.Controllers
             SpotifyClient spotify = GetSpotifyclient();
 
             var track = await spotify.Tracks.Get(trackId).ConfigureAwait(false);
+            return ConvertSpotifyToDbSong(searchTerm, track);
+        }
 
+        private static DBModels.Song ConvertSpotifyToDbSong(string searchTerm, FullTrack track)
+        {
             var external = new DBModels.ExternalSong()
             {
                 Artist = string.Join(", ", track.Artists.Select(a => a.Name)),
@@ -97,7 +101,7 @@ namespace Coflnet.SongVoter.Controllers
                 ExternalSongs = new System.Collections.Generic.List<DBModels.ExternalSong>() { external },
                 Title = track.Name,
                 Lookup = ConvertLookupText(combined)
-            }; ;
+            };
         }
 
         private SpotifyClient GetSpotifyclient()
@@ -115,7 +119,7 @@ namespace Coflnet.SongVoter.Controllers
         public static string ConvertLookupText(string combined)
         {
             var full = Regex.Replace(combined, "[^a-zA-Z0-9]", "").ToLower();
-            if(full.Length > 200)
+            if (full.Length > 200)
                 return full.Substring(0, 200);
             return full;
         }
@@ -188,9 +192,11 @@ namespace Coflnet.SongVoter.Controllers
             // search for song on youtube api
             var youtubeSearchTask = GetYoutubeSearchResult(term);
             SearchResponse spotifyResponse = await SearchSpotify(term);
-            var spotifySong = await UpdateSpotifySongs(spotifyResponse, term);
-            var youtubesongs = await UpdateYoutubeSongs(await youtubeSearchTask, term);
-            var songsToRespond = spotifySong.Concat(youtubesongs)
+            var spotifySongIds = await UpdateSpotifySongs(spotifyResponse, term);
+            var youtubesongsIds = await UpdateYoutubeSongs(await youtubeSearchTask, term);
+            var combinedSongIds = spotifySongIds.Concat(youtubesongsIds);
+            var dbSongs = await db.Songs.Where(s => s.ExternalSongs.Any(e => combinedSongIds.Contains(e.ExternalId))).ToListAsync();
+            var songsToRespond = dbSongs
                     .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongCreation.SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongCreation.SongPlatform.Spotify))));
             return Ok(songsToRespond.Select(s => transformer.ToApiSong(s)));
         }
@@ -204,41 +210,46 @@ namespace Coflnet.SongVoter.Controllers
             return spotifyResponse;
         }
 
-        private async Task<List<DBModels.Song>> UpdateSpotifySongs(SearchResponse spotifyResponse, string searchTerm)
+        private async Task<List<string>> UpdateSpotifySongs(SearchResponse spotifyResponse, string searchTerm)
         {
             var spotifyIds = spotifyResponse.Tracks.Items.Select(i => i.Id);
+            spotifyResponse.Tracks.Items.First().Album.Images.First().Url.ToString();
             var spotifyExisting = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).Select(e => e.ExternalId).ToListAsync();
             if (spotifyExisting.Count != spotifyIds.Count())
             {
                 // execute in parallel
-                await Parallel.ForEachAsync(spotifyIds.Except(spotifyExisting), async (item, ct) =>
+                foreach (var item in spotifyIds.Where(i => !spotifyExisting.Contains(i)))
                 {
                     try
                     {
-                        var songsToAdd = await GetSongFromSpotify(item, searchTerm);
+                        var songsToAdd = ConvertSpotifyToDbSong(searchTerm, spotifyResponse.Tracks.Items.First(i => i.Id == item));
                         db.Add(songsToAdd);
                     }
                     catch (System.Exception e)
                     {
                         logger.LogError(e, "Error while parsing spotify song " + item);
                     }
-                });
+                }
+                await db.SaveChangesAsync();
             }
-            // update song titles
-            var spotifySongs = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).ToListAsync();
-            foreach (var song in spotifySongs)
+            else
             {
-                var item = spotifyResponse.Tracks.Items.First(i => i.Id == song.ExternalId);
-                song.Title = item.Name;
-                song.ThumbnailUrl = item.Album.Images.First().Url;
-                song.Artist = item.Artists.First().Name;
-                song.Duration = TimeSpan.FromMilliseconds(item.DurationMs);
+                // update song titles TODO: move this to background job
+                // var spotifySongs = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).ToListAsync();
+                // foreach (var song in spotifySongs)
+                // {
+                //     var item = spotifyResponse.Tracks.Items.First(i => i.Id == song.ExternalId);
+                //     song.Title = item.Name;
+                //     song.ThumbnailUrl = item.Album.Images.First().Url;
+                //     song.Artist = item.Artists.First().Name;
+                //     song.Duration = TimeSpan.FromMilliseconds(item.DurationMs);
+                // }
+                // await db.SaveChangesAsync();
             }
-            await db.SaveChangesAsync();
-            return db.Songs.Where(s => s.ExternalSongs.Any(e => spotifyIds.Contains(e.ExternalId))).ToList();
+            return spotifyIds.ToList();
         }
 
-        private async Task<List<DBModels.Song>> UpdateYoutubeSongs(SearchListResponse response, string term)
+        private async Task<List<string>> UpdateYoutubeSongs(SearchListResponse response, string term)
         {
             // convert response to db entry 
             var ids = response.Items.Select(i => i.Id.VideoId);
@@ -251,18 +262,19 @@ namespace Coflnet.SongVoter.Controllers
                 {
                     db.Add(song);
                 }
+                await db.SaveChangesAsync();
             }
             // update song titles 
-            var songs = await db.ExternalSongs.Where(s => ids.Contains(s.ExternalId)).ToListAsync();
-            foreach (var song in songs)
-            {
-                var item = response.Items.First(i => i.Id.VideoId == song.ExternalId);
-                song.Title = item.Snippet.Title;
-                song.ThumbnailUrl = (item.Snippet?.Thumbnails?.Standard ?? item.Snippet?.Thumbnails?.High)?.Url;
-                song.Artist = item.Snippet.ChannelTitle;
-            }
-            await db.SaveChangesAsync();
-            return db.Songs.Where(s => s.ExternalSongs.Any(e => ids.Contains(e.ExternalId))).ToList();
+            // var songs = await db.ExternalSongs.Where(s => ids.Contains(s.ExternalId)).ToListAsync();
+            // foreach (var song in songs)
+            // {
+            //     var item = response.Items.First(i => i.Id.VideoId == song.ExternalId);
+            //     song.Title = item.Snippet.Title;
+            //     song.ThumbnailUrl = (item.Snippet?.Thumbnails?.Standard ?? item.Snippet?.Thumbnails?.High)?.Url;
+            //     song.Artist = item.Snippet.ChannelTitle;
+            // }
+            // await db.SaveChangesAsync();
+            return ids.ToList();
         }
 
         private async Task<SearchListResponse> GetYoutubeSearchResult(string term)
