@@ -203,6 +203,33 @@ namespace Coflnet.SongVoter.Controllers
             return new AuthToken() { Token = CreateTokenFor(userId) };
         }
 
+        /// <summary>
+        /// Sign in with anonymous user
+        /// </summary>
+        /// <param name="nonce">client choosen identifier</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("/auth/anonymous")]
+        [SwaggerOperation("AuthWithAnonymous")]
+        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
+        public async Task<IActionResult> AuthWithAnonymous(string nonce)
+        {
+            var prefixed = "anonymous:" + nonce;
+            var existing = db.Users.Where(u => u.GoogleId == prefixed).FirstOrDefault();
+            if (existing != null)
+            {
+                return Ok(new AuthToken() { Token = CreateTokenFor(existing.Id) });
+            }
+            var user = new User()
+            {
+                GoogleId = prefixed,
+                Name = "Anonymous"
+            };
+            db.Add(user);
+            await db.SaveChangesAsync();
+            return Ok(new AuthToken() { Token = CreateTokenFor(user.Id) });
+        }
+
 
         [HttpPost]
         [Route("/auth/test")]
