@@ -56,6 +56,8 @@ namespace Coflnet.SongVoter
         /// </summary>
         public IConfiguration Configuration { get; }
 
+        private static string CORS_PLICY_NAME = "defaultCorsPolicy";
+
         /// <summary>
         /// This method gets called by the runtime. Use this method to add services to the container.
         /// </summary>
@@ -109,6 +111,11 @@ namespace Coflnet.SongVoter
                 });
             services
                 .AddSwaggerGenNewtonsoftSupport();
+
+            services.AddCors(o =>
+            {
+                o.AddPolicy(CORS_PLICY_NAME, p => p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+            });
 
 
             string key = Configuration["jwt:secret"]; //this should be same which is used while creating token      
@@ -182,6 +189,7 @@ namespace Coflnet.SongVoter
                     c.SwaggerEndpoint("/openapi/0.0.1/openapi.json", "Songvoter");
                 });
             app.UseRouting();
+            app.UseCors(CORS_PLICY_NAME);
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseEndpoints(endpoints =>
