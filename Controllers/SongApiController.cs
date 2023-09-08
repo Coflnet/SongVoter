@@ -195,7 +195,7 @@ namespace Coflnet.SongVoter.Controllers
             var spotifySongIds = await UpdateSpotifySongs(spotifyResponse, term);
             var youtubesongsIds = await UpdateYoutubeSongs(await youtubeSearchTask, term);
             var combinedSongIds = spotifySongIds.Concat(youtubesongsIds);
-            var dbSongs = await db.Songs.Where(s => s.ExternalSongs.Any(e => combinedSongIds.Contains(e.ExternalId))).ToListAsync();
+            var dbSongs = await db.Songs.Where(s => s.ExternalSongs.Any(e => combinedSongIds.Contains(e.ExternalId))).Include(s=>s.ExternalSongs).ToListAsync();
             var songsToRespond = dbSongs
                     .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongCreation.SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongCreation.SongPlatform.Spotify))));
             return Ok(songsToRespond.Select(s => transformer.ToApiSong(s)));
