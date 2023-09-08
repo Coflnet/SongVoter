@@ -194,7 +194,9 @@ namespace Coflnet.SongVoter.Controllers
         private async Task AddUserSongsToParty(Party party, User user)
         {
             var userId = user.Id;
-            var list = await db.PlayLists.Where(pl => pl.Owner == userId).Include(p => p.Songs).FirstAsync();
+            var list = await db.PlayLists.Where(pl => pl.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            if (list == null)
+                return; // no songs
             foreach (var item in list.Songs)
             {
                 // currently they are never removed
