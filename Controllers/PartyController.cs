@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Coflnet.SongVoter.Attributes;
@@ -182,7 +183,9 @@ namespace Coflnet.SongVoter.Controllers
         {
             var invitedId = idService.FromHash(inviteId);
             var party = await db.Invites.Where(i=>i.Id == invitedId).Include(i=>i.Party).Select(i => i.Party).FirstOrDefaultAsync();
+            using var transaction = db.Database.BeginTransaction(IsolationLevel.RepeatableRead);
             var user = await CurrentUser();
+            // lock current user 
             await AddUserSongsToParty(party, user);
             var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
             userWithParty.Parties.Clear();
