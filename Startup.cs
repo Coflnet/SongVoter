@@ -177,6 +177,7 @@ namespace Coflnet.SongVoter
                 app.UseHsts();
             }
             app.UseCoflnetCore();
+            app.UseMiddleware<ErrorMiddleware>();
 
             app.UseSwagger(c =>
                 {
