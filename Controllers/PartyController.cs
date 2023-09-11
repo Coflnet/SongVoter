@@ -150,6 +150,8 @@ namespace Coflnet.SongVoter.Controllers
             var parties = await db.Parties.Where(p => p.Creator == user || p.Members.Contains(user))
                 .Include(p => p.Members)
                 .Include(c => c.Creator).FirstOrDefaultAsync();
+            if (parties == null)
+                throw new ApiException(System.Net.HttpStatusCode.NotFound, "You are not in a party");
             return parties;
         }
 
@@ -184,7 +186,7 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> JoinParty([FromRoute(Name = "inviteId"), Required] string inviteId)
         {
             var invitedId = idService.FromHash(inviteId);
-            var party = await db.Invites.Where(i=>i.Id == invitedId).Include(i=>i.Party).Select(i => i.Party).FirstOrDefaultAsync();
+            var party = await db.Invites.Where(i => i.Id == invitedId).Include(i => i.Party).Select(i => i.Party).FirstOrDefaultAsync();
             if (party == null)
                 return NotFound("Party not found");
             using var transaction = db.Database.BeginTransaction(IsolationLevel.RepeatableRead);
@@ -312,6 +314,8 @@ namespace Coflnet.SongVoter.Controllers
         [HttpGet]
         [Route("/party/playlist")]
         [Authorize]
+        [SwaggerResponse(statusCode: 200, type: typeof(List<Models.PartyPlaylistEntry>), description: "invite created")]
+        [SwaggerResponse(statusCode: 404, type: typeof(ApiException), description: "not in a party")]
         public async Task<ActionResult<List<Models.PartyPlaylistEntry>>> GetSongList()
         {
             var pId = (await GetCurrentParty()).Id;
