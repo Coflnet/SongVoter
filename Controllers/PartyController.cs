@@ -183,6 +183,8 @@ namespace Coflnet.SongVoter.Controllers
         {
             var invitedId = idService.FromHash(inviteId);
             var party = await db.Invites.Where(i=>i.Id == invitedId).Include(i=>i.Party).Select(i => i.Party).FirstOrDefaultAsync();
+            if (party == null)
+                return NotFound("Party not found");
             using var transaction = db.Database.BeginTransaction(IsolationLevel.RepeatableRead);
             var user = await CurrentUser();
             // lock current user 
