@@ -68,7 +68,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             var userId = idService.UserId(this);
             Console.WriteLine("user id: " + userId);
-            var currentParty = await GetCurrentParty();
+            var currentParty = await GetCurrentParty(true);
             if (currentParty != null)
                 return BadRequest("You are already in a party, leave it first");
 
@@ -144,13 +144,13 @@ namespace Coflnet.SongVoter.Controllers
             return Ok(ToExternalParty(party));
         }
 
-        private async Task<Party> GetCurrentParty()
+        private async Task<Party> GetCurrentParty(bool allowNull = false)
         {
             var user = await CurrentUser();
             var parties = await db.Parties.Where(p => p.Creator == user || p.Members.Contains(user))
                 .Include(p => p.Members)
                 .Include(c => c.Creator).FirstOrDefaultAsync();
-            if (parties == null)
+            if (parties == null && !allowNull)
                 throw new ApiException(System.Net.HttpStatusCode.NotFound, "You are not in a party");
             return parties;
         }
