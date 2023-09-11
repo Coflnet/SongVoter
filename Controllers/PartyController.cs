@@ -190,14 +190,22 @@ namespace Coflnet.SongVoter.Controllers
             if (party == null)
                 return NotFound("Party not found");
             using var transaction = db.Database.BeginTransaction(IsolationLevel.RepeatableRead);
-            var user = await CurrentUser();
-            // lock current user 
-            await AddUserSongsToParty(party, user);
-            var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
-            userWithParty.Parties.Clear();
-            userWithParty.Parties.Add(party);
-            await db.SaveChangesAsync();
-            return Ok();
+            try
+            {
+                var user = await CurrentUser();
+                // lock current user 
+                await AddUserSongsToParty(party, user);
+                var userWithParty = await db.Users.Where(u => u.Id == user.Id).Include(u => u.Parties).FirstAsync();
+                userWithParty.Parties.Clear();
+                userWithParty.Parties.Add(party);
+                await db.SaveChangesAsync();
+                return Ok();
+            }
+            finally
+            {
+                await transaction.CommitAsync();
+            }
+
         }
 
         private async Task AddUserSongsToParty(Party party, User user)
