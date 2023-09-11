@@ -173,12 +173,14 @@ namespace Coflnet.SongVoter.Controllers
         /// Joins a party
         /// </summary>
         /// <param name="inviteId">ID of the invite link to join a party with</param>
-        /// <response code="201">joined successfully</response>
+        /// <response code="200">joined successfully</response>
         [HttpPost]
         [Route("/party/{inviteId}/join")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
+        [SwaggerResponse(statusCode: 200, description: "joined successfully")]
+        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "party not found")]
         public async Task<IActionResult> JoinParty([FromRoute(Name = "inviteId"), Required] string inviteId)
         {
             var invitedId = idService.FromHash(inviteId);
