@@ -16,6 +16,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers
 {
+    [Route("api/party")]
     public class PartyController : ControllerBase
     {
         private readonly SVContext db;
@@ -32,7 +33,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">invite link created</response>
         [HttpGet]
-        [Route("/party/inviteLink")]
+        [Route("inviteLink")]
         //[Authorize]
         [SwaggerOperation("CreateInviteLink")]
         public async Task<ActionResult<Models.Invite>> CreateInviteLink()
@@ -58,7 +59,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful created</response>
         [HttpPost]
-        [Route("/party")]
+        [Route("")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
@@ -130,7 +131,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful created</response>
         [HttpGet]
-        [Route("/party")]
+        [Route("")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetParties")]
@@ -162,7 +163,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="userId">ID of user to invite</param>
         /// <response code="201">invite sent</response>
         [HttpPost]
-        [Route("/party/invite/{userId}")]
+        [Route("invite/{userId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("InviteToParty")]
@@ -177,7 +178,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="inviteId">ID of the invite link to join a party with</param>
         /// <response code="200">joined successfully</response>
         [HttpPost]
-        [Route("/party/{inviteId}/join")]
+        [Route("{inviteId}/join")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("JoinParty")]
@@ -230,7 +231,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="userId">ID of user to kick</param>
         /// <response code="201">left successfully</response>
         [HttpPost]
-        [Route("/party/kick/{userId}")]
+        [Route("kick/{userId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("KickFromParty")]
@@ -252,7 +253,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="201">left successfully</response>
         [HttpPost]
-        [Route("/party/leave")]
+        [Route("leave")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("LeaveParty")]
@@ -302,7 +303,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="partyId">ID of party</param>
         /// <response code="200">invite created</response>
         [HttpGet]
-        [Route("/party/nextSong")]
+        [Route("nextSong")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("NextSong")]
@@ -320,7 +321,7 @@ namespace Coflnet.SongVoter.Controllers
             return songTransformer.ToApiSong(next);
         }
         [HttpGet]
-        [Route("/party/playlist")]
+        [Route("playlist")]
         [Authorize]
         [SwaggerResponse(statusCode: 200, type: typeof(List<Models.PartyPlaylistEntry>), description: "invite created")]
         [SwaggerResponse(statusCode: 404, type: typeof(ApiException), description: "not in a party")]
@@ -344,7 +345,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="200">song marked</response>
         /// <response code="404">song not found</response>
         [HttpPost]
-        [Route("/party/song/{songId}/played")]
+        [Route("song/{songId}/played")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("PlayedSong")]
@@ -367,7 +368,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="partyId">ID of party to invite to</param>
         /// <response code="200">reset party</response>
         [HttpPost]
-        [Route("/party/{partyId}/reset")]
+        [Route("{partyId}/reset")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("ResetParty")]
@@ -389,7 +390,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="songId">ID of the song to upvote</param>
         /// <response code="200">upvoted</response>
         [HttpPost]
-        [Route("/party/upvote/{songId}")]
+        [Route("upvote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("UpvoteSong")]
@@ -416,7 +417,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="songId">ID of the song</param>
         /// <response code="200">downvote accepted</response>
         [HttpPost]
-        [Route("/party/downvote/{songId}")]
+        [Route("downvote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("DownvoteSong")]
@@ -436,7 +437,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="songId">ID of the song</param>
         /// <response code="200">vote removed</response>
         [HttpPost]
-        [Route("/party/removeVote/{songId}")]
+        [Route("removeVote/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("RemoveVote")]

@@ -28,6 +28,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Coflnet.SongVoter.Controllers
 {
+    [Route("api/auth")]
     public class AuthApiControllerImpl : ControllerBase
     {
         private readonly SVContext db;
@@ -49,7 +50,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="authToken">The google identity token</param>
         /// <response code="200">successful operation</response>
        /* [HttpPost]
-        [Route("/auth/google")]
+        [Route("google")]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogle")]
@@ -73,7 +74,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="refreshToken">The google refresh token</param>
         /// <response code="200">successful operation</response>
         [HttpPost]
-        [Route("/auth/google")]
+        [Route("google")]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithGoogleCode")]
@@ -109,7 +110,7 @@ namespace Coflnet.SongVoter.Controllers
         }
 
         [HttpPost]
-        [Route("/auth/spotify/code")]
+        [Route("spotify/code")]
         [Consumes("application/json")]
         [ValidateModelState]
         [SwaggerOperation("AuthWithSpotify")]
@@ -209,7 +210,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="nonce">client choosen identifier</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("/auth/anonymous")]
+        [Route("anonymous")]
         [SwaggerOperation("AuthWithAnonymous")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
         public async Task<IActionResult> AuthWithAnonymous(string nonce)
@@ -232,7 +233,7 @@ namespace Coflnet.SongVoter.Controllers
 
 
         [HttpPost]
-        [Route("/auth/test")]
+        [Route("test")]
         [Consumes("application/json")]
         public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
         {

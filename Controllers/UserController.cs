@@ -14,6 +14,7 @@ using SpotifyAPI.Web;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers;
+[Route("api/user")]
 public class UserController : ControllerBase
 {
     private readonly SVContext db;
@@ -32,7 +33,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <response code="200">successful created</response>
     [HttpPost]
-    [Route("/user/name")]
+    [Route("name")]
     [ValidateModelState]
     [SwaggerOperation("UpdateUserName")]
     [SwaggerResponse(statusCode: 200, type: typeof(User), description: "successful updated")]
@@ -50,7 +51,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    [Route("/user/spotify/token")]
+    [Route("spotify/token")]
     [Consumes("application/json")]
     public async Task<ActionResult<string>> GetSpotifyToken()
     {
@@ -104,7 +105,7 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
-    [Route("/user/info")]
+    [Route("info")]
     public async Task<UserInfo> GetUserInfo()
     {
         var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
@@ -124,7 +125,7 @@ public class UserController : ControllerBase
     /// <returns></returns>
     /// <exception cref="Core.ApiException"></exception>
     [HttpDelete]
-    [Route("/user/spotify")]
+    [Route("spotify")]
     public async Task<UserInfo> DisconnectSpotify()
     {
         var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();

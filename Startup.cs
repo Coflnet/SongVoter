@@ -181,13 +181,13 @@ namespace Coflnet.SongVoter
 
             app.UseSwagger(c =>
                 {
-                    c.RouteTemplate = "openapi/{documentName}/openapi.json";
+                    c.RouteTemplate = "api/openapi/{documentName}/openapi.json";
                 })
                 .UseSwaggerUI(c =>
                 {
                     // set route prefix to api, e.g. http://localhost:8080/api/index.html
                     c.RoutePrefix = "api";
-                    c.SwaggerEndpoint("/openapi/0.0.1/openapi.json", "Songvoter");
+                    c.SwaggerEndpoint("/api/openapi/0.0.1/openapi.json", "Songvoter");
                 });
             app.UseRouting();
             app.UseCors(CORS_PLICY_NAME);

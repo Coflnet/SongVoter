@@ -13,6 +13,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Coflnet.SongVoter.Controllers
 {
+    [Route("api/lists")]
     public class ListApiControllerImpl : ControllerBase
     {
         private SVContext db;
@@ -30,7 +31,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="playList">An array of songIds to be added to the song</param>
         /// <response code="200">successful created list</response>
         [HttpPost]
-        [Route("/lists")]
+        [Route("")]
         [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
@@ -56,7 +57,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpPost]
-        [Route("/lists/{listId}/songs")]
+        [Route("{listId}/songs")]
         [Authorize]
         [Consumes("application/json")]
         [ValidateModelState]
@@ -91,7 +92,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <response code="400">song not in list</response>
         /// <response code="401">user not authorized</response>
         [HttpDelete]
-        [Route("/lists/{listId}/songs/{songId}")]
+        [Route("{listId}/songs/{songId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("RemoveSongFromList")]
@@ -132,7 +133,7 @@ namespace Coflnet.SongVoter.Controllers
         /// <param name="listId">ID of list to return</param>
         /// <response code="200">successful operation</response>
         [HttpGet]
-        [Route("/lists/{listId}")]
+        [Route("{listId}")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetListById")]
@@ -153,7 +154,7 @@ namespace Coflnet.SongVoter.Controllers
         /// </summary>
         /// <response code="200">successful response</response>
         [HttpGet]
-        [Route("/lists")]
+        [Route("")]
         [Authorize]
         [ValidateModelState]
         [SwaggerOperation("GetPlaylists")]
