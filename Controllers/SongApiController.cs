@@ -189,6 +189,7 @@ public class SongApiController : ControllerBase
         {
             return Ok(localRes);
         }
+        var internalpaltfomr = (SongVoter.DBModels.Platforms)platforms;
         // search for song on youtube api
         var youtubeSearchTask = GetYoutubeSearchResult(term);
         SearchResponse spotifyResponse = await SearchSpotify(term);
@@ -197,7 +198,7 @@ public class SongApiController : ControllerBase
         var combinedSongIds = spotifySongIds.Concat(youtubesongsIds);
         var dbSongs = await db.Songs.Where(s => s.ExternalSongs.Any(e => combinedSongIds.Contains(e.ExternalId))).Include(s => s.ExternalSongs).ToListAsync();
         var songsToRespond = dbSongs
-                .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongCreation.SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongCreation.SongPlatform.Spotify))));
+                .Where(s => s.ExternalSongs.Any(e => internalpaltfomr.HasFlag(e.Platform)));
         return Ok(songsToRespond.Select(s => transformer.ToApiSong(s)));
     }
 

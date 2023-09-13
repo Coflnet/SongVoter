@@ -39,6 +39,7 @@ namespace Coflnet.SongVoter.Models
         /// <value>The platform of this song</value>
         [TypeConverter(typeof(CustomEnumConverter<SongPlatform>))]
         [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        [Flags]
         public enum SongPlatform
         {
             
