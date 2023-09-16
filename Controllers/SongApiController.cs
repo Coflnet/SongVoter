@@ -60,9 +60,9 @@ public class SongApiController : ControllerBase
         if (db.ExternalSongs.Where(s => s.ExternalId == body.ExternalId).Any())
             return StatusCode(409, "Song already exists");
         IEnumerable<DBModels.Song> songs;
-        if (body.Platform == SongCreation.SongPlatform.Spotify)
+        if (body.Platform == SongPlatform.Spotify)
             songs = new DBModels.Song[] { await GetSongFromSpotify(null, null) };
-        else if (body.Platform == SongCreation.SongPlatform.Youtube)
+        else if (body.Platform == SongPlatform.Youtube)
             songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId }, null);
         else
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, "The field `platform` in your request is invalid");
@@ -182,14 +182,15 @@ public class SongApiController : ControllerBase
     [ValidateModelState]
     [SwaggerOperation("FindSong")]
     [SwaggerResponse(statusCode: 200, type: typeof(List<Models.Song>), description: "successful operation")]
-    public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term, SongCreation.SongPlatform platforms = SongCreation.SongPlatform.Youtube | SongCreation.SongPlatform.Spotify)
+    public async Task<IActionResult> FindSong([FromQuery(Name = "term"), Required] string term, SongPlatform[] platforms = null)
     {
-        var localRes = await SearchLocalDbFor(term, platforms);
+        SongPlatform combinedPlatforms = transformer.CombinePlatforms(platforms);
+        var localRes = await SearchLocalDbFor(term, combinedPlatforms);
         if (localRes.Count() > 12)
         {
             return Ok(localRes);
         }
-        var internalpaltfomr = (SongVoter.DBModels.Platforms)platforms;
+        var internalpaltfomr = (SongVoter.DBModels.Platforms)combinedPlatforms;
         // search for song on youtube api
         var youtubeSearchTask = GetYoutubeSearchResult(term);
         SearchResponse spotifyResponse = await SearchSpotify(term);
@@ -201,6 +202,8 @@ public class SongApiController : ControllerBase
                 .Where(s => s.ExternalSongs.Any(e => internalpaltfomr.HasFlag(e.Platform)));
         return Ok(songsToRespond.Select(s => transformer.ToApiSong(s)));
     }
+
+
 
     private async Task<SearchResponse> SearchSpotify(string term)
     {
@@ -295,12 +298,12 @@ public class SongApiController : ControllerBase
         return response;
     }
 
-    private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term, SongCreation.SongPlatform platforms)
+    private async Task<IEnumerable<Models.Song>> SearchLocalDbFor(string term, SongPlatform platforms)
     {
         var lookup = ConvertLookupText(term);
         var songs = await this.db
             .Songs.Where(s => s.Lookup.ToLower().Contains(term.ToLower()))
-            .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongCreation.SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongCreation.SongPlatform.Spotify))))
+            .Where(s => s.ExternalSongs.Any(e => (e.Platform == Platforms.Youtube && platforms.HasFlag(SongPlatform.Youtube)) || (e.Platform == Platforms.Spotify && platforms.HasFlag(SongPlatform.Spotify))))
             .Include(s => s.ExternalSongs)
             .Take(20)
             .ToListAsync();

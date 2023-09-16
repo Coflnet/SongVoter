@@ -178,7 +178,7 @@ namespace Coflnet.SongVoter.Controllers
                     Title = s.Title,
                     Occurences = s.ExternalSongs?.Select(o => new Models.ExternalSong()
                     {
-                        Platform = (Models.ExternalSong.PlatformEnum)o.Platform,
+                        Platform = (SongPlatform)o.Platform,
                         ExternalId = o.ExternalId,
                         Title = o.Title,
                         Artist = o.Artist,

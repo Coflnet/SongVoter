@@ -82,7 +82,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 Creator = user,
                 Name = partyCreateOptions.Name ?? "My party",
-                SupportedPlatforms = partyCreateOptions.SupportedPlatforms
+                SupportedPlatforms = (Platforms) songTransformer.CombinePlatforms(partyCreateOptions.SupportedPlatforms)
             };
             this.db.Add(party);
             await this.db.SaveChangesAsync();

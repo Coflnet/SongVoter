@@ -11,5 +11,5 @@ public class PartyCreateOptions
     /// <summary>
     /// What platforms are supported by this party
     /// </summary>
-    public Platforms SupportedPlatforms { get; set; }
+    public SongPlatform[] SupportedPlatforms { get; set; }
 }

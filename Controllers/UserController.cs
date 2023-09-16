@@ -36,7 +36,7 @@ public class UserController : ControllerBase
     [Route("name")]
     [ValidateModelState]
     [SwaggerOperation("UpdateUserName")]
-    [SwaggerResponse(statusCode: 200, type: typeof(User), description: "successful updated")]
+    [SwaggerResponse(statusCode: 200, description: "successful updated")]
     public async Task<IActionResult> UpdateName([FromBody, Required] string name)
     {
         var user = await db.Users.FindAsync((int)idService.UserId(this));

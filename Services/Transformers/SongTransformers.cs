@@ -1,4 +1,5 @@
 using System.Linq;
+using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 
 namespace Coflnet.SongVoter.Transformers
@@ -14,7 +15,7 @@ namespace Coflnet.SongVoter.Transformers
 
         public Models.Song ToApiSong(DBModels.Song db)
         {
-            if(db == null)
+            if (db == null)
                 return null;
             System.Console.WriteLine($"lookup: {db.Lookup}");
             return new Models.Song()
@@ -25,7 +26,7 @@ namespace Coflnet.SongVoter.Transformers
                 {
                     Artist = s.Artist,
                     ExternalId = s.ExternalId,
-                    Platform = (Models.ExternalSong.PlatformEnum)s.Platform,
+                    Platform = (SongPlatform) s.Platform,
                     Thumbnail = s.ThumbnailUrl,
                     Title = s.Title,
                     DurationMs = (int)s.Duration.TotalMilliseconds
@@ -35,17 +36,24 @@ namespace Coflnet.SongVoter.Transformers
 
         public Models.PartyPlaylistEntry ToApiPartyPlaylistEntry(DBModels.PartySong db, int userId)
         {
-            if(db == null)
+            if (db == null)
                 return null;
             return new Models.PartyPlaylistEntry()
             {
                 DownVotes = db.DownVoters.Count(),
                 UpVotes = db.UpVoters.Count(),
-                SelfVote =  db.UpVoters.Any(u=>u.Id == userId) ? Models.PartyPlaylistEntry.SelfVoteState.Up :
-                            db.DownVoters.Any(u=>u.Id == userId)  ? Models.PartyPlaylistEntry.SelfVoteState.Down :
+                SelfVote = db.UpVoters.Any(u => u.Id == userId) ? Models.PartyPlaylistEntry.SelfVoteState.Up :
+                            db.DownVoters.Any(u => u.Id == userId) ? Models.PartyPlaylistEntry.SelfVoteState.Down :
                             Models.PartyPlaylistEntry.SelfVoteState.None,
                 Song = ToApiSong(db.Song)
             };
+        }
+
+        public SongPlatform CombinePlatforms(SongPlatform[] platforms)
+        {
+            platforms = platforms ?? new SongPlatform[] { SongPlatform.Spotify, SongPlatform.Youtube };
+            SongPlatform combinedPlatforms = platforms.Aggregate((a, b) => a | b);
+            return combinedPlatforms;
         }
     }
 }

@@ -32,30 +32,6 @@ namespace Coflnet.SongVoter.Models
         [DataMember(Name="externalId", EmitDefaultValue=false)]
         public string ExternalId { get; set; }
 
-
-        /// <summary>
-        /// The platform of this song
-        /// </summary>
-        /// <value>The platform of this song</value>
-        [TypeConverter(typeof(CustomEnumConverter<SongPlatform>))]
-        [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        [Flags]
-        public enum SongPlatform
-        {
-            
-            /// <summary>
-            /// Enum YoutubeEnum for youtube
-            /// </summary>
-            [EnumMember(Value = "youtube")]
-            Youtube = 1,
-            
-            /// <summary>
-            /// Enum SpotifyEnum for spotify
-            /// </summary>
-            [EnumMember(Value = "spotify")]
-            Spotify = 2
-        }
-
         /// <summary>
         /// The platform of this song
         /// </summary>

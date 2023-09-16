@@ -12,14 +12,12 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
-using Coflnet.SongVoter.Converters;
 
 namespace Coflnet.SongVoter.Models
-{ 
+{
     /// <summary>
     /// 
     /// </summary>
@@ -29,63 +27,43 @@ namespace Coflnet.SongVoter.Models
         /// <summary>
         /// Gets or Sets Title
         /// </summary>
-        [DataMember(Name="title", EmitDefaultValue=false)]
+        [DataMember(Name = "title", EmitDefaultValue = false)]
         public string Title { get; set; }
 
         /// <summary>
         /// Gets or Sets Artist
         /// </summary>
-        [DataMember(Name="artist", EmitDefaultValue=false)]
+        [DataMember(Name = "artist", EmitDefaultValue = false)]
         public string Artist { get; set; }
 
         /// <summary>
         /// Gets or Sets Thumbnail
         /// </summary>
-        [DataMember(Name="thumbnail", EmitDefaultValue=false)]
+        [DataMember(Name = "thumbnail", EmitDefaultValue = false)]
         public string Thumbnail { get; set; }
 
         /// <summary>
         /// Gets or Sets ExternalId
         /// </summary>
         [Required]
-        [DataMember(Name="externalId", EmitDefaultValue=false)]
+        [DataMember(Name = "externalId", EmitDefaultValue = false)]
         public string ExternalId { get; set; }
         /// <summary>
         /// Gets or Sets the Duration
         /// </summary>
-        [DataMember(Name="duration", EmitDefaultValue=false)]
+        [DataMember(Name = "duration", EmitDefaultValue = false)]
         public int DurationMs { get; set; }
 
 
-        /// <summary>
-        /// The platform of this song
-        /// </summary>
-        /// <value>The platform of this song</value>
-        [TypeConverter(typeof(CustomEnumConverter<PlatformEnum>))]
-        [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
-        public enum PlatformEnum
-        {
-            
-            /// <summary>
-            /// Enum YoutubeEnum for youtube
-            /// </summary>
-            [EnumMember(Value = "youtube")]
-            YoutubeEnum = 1,
-            
-            /// <summary>
-            /// Enum SpotifyEnum for spotify
-            /// </summary>
-            [EnumMember(Value = "spotify")]
-            SpotifyEnum = 2
-        }
+
 
         /// <summary>
         /// The platform of this song
         /// </summary>
         /// <value>The platform of this song</value>
         [Required]
-        [DataMember(Name="platform", EmitDefaultValue=false)]
-        public PlatformEnum Platform { get; set; }
+        [DataMember(Name = "platform", EmitDefaultValue = false)]
+        public SongPlatform Platform { get; set; }
 
         /// <summary>
         /// Returns the string presentation of the object
@@ -135,30 +113,30 @@ namespace Coflnet.SongVoter.Models
             if (other is null) return false;
             if (ReferenceEquals(this, other)) return true;
 
-            return 
+            return
                 (
                     Title == other.Title ||
                     Title != null &&
                     Title.Equals(other.Title)
-                ) && 
+                ) &&
                 (
                     Artist == other.Artist ||
                     Artist != null &&
                     Artist.Equals(other.Artist)
-                ) && 
+                ) &&
                 (
                     Thumbnail == other.Thumbnail ||
                     Thumbnail != null &&
                     Thumbnail.Equals(other.Thumbnail)
-                ) && 
+                ) &&
                 (
                     ExternalId == other.ExternalId ||
                     ExternalId != null &&
                     ExternalId.Equals(other.ExternalId)
-                ) && 
+                ) &&
                 (
                     Platform == other.Platform ||
-                    
+
                     Platform.Equals(other.Platform)
                 );
         }
@@ -173,22 +151,22 @@ namespace Coflnet.SongVoter.Models
             {
                 var hashCode = 41;
                 // Suitable nullity checks etc, of course :)
-                    if (Title != null)
+                if (Title != null)
                     hashCode = hashCode * 59 + Title.GetHashCode();
-                    if (Artist != null)
+                if (Artist != null)
                     hashCode = hashCode * 59 + Artist.GetHashCode();
-                    if (Thumbnail != null)
+                if (Thumbnail != null)
                     hashCode = hashCode * 59 + Thumbnail.GetHashCode();
-                    if (ExternalId != null)
+                if (ExternalId != null)
                     hashCode = hashCode * 59 + ExternalId.GetHashCode();
-                    
-                    hashCode = hashCode * 59 + Platform.GetHashCode();
+
+                hashCode = hashCode * 59 + Platform.GetHashCode();
                 return hashCode;
             }
         }
 
         #region Operators
-        #pragma warning disable 1591
+#pragma warning disable 1591
 
         public static bool operator ==(ExternalSong left, ExternalSong right)
         {
@@ -200,7 +178,7 @@ namespace Coflnet.SongVoter.Models
             return !Equals(left, right);
         }
 
-        #pragma warning restore 1591
+#pragma warning restore 1591
         #endregion Operators
     }
 }
