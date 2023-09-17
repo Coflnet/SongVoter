@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
 
@@ -54,6 +57,18 @@ namespace Coflnet.SongVoter.Transformers
             platforms = platforms ?? new SongPlatform[] { SongPlatform.Spotify, SongPlatform.Youtube };
             SongPlatform combinedPlatforms = platforms.Aggregate((a, b) => a | b);
             return combinedPlatforms;
+        }
+
+        internal SongPlatform[] SplitPlatforms(Platforms supportedPlatforms)
+        {
+            var platforms = (SongPlatform)supportedPlatforms;
+            var result = new List<SongPlatform>();
+            foreach (SongPlatform platform in Enum.GetValues(typeof(SongPlatform)))
+            {
+                if (platforms.HasFlag(platform))
+                    result.Add(platform);
+            }
+            return result.ToArray();
         }
     }
 }

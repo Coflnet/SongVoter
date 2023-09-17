@@ -50,6 +50,12 @@ namespace Coflnet.SongVoter.Models
         public List<string> Members { get; set; }
 
         /// <summary>
+        /// Enabled Platforms
+        /// </summary>
+        [DataMember(Name="platforms", EmitDefaultValue=false)]
+        public SongPlatform[] SupportedPlatforms { get; set; }
+
+        /// <summary>
         /// Returns the string presentation of the object
         /// </summary>
         /// <returns>String presentation of the object</returns>
