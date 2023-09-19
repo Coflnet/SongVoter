@@ -64,14 +64,14 @@ namespace Coflnet.SongVoter.Controllers
         [ValidateModelState]
         [SwaggerOperation("CreateParty")]
         [SwaggerResponse(statusCode: 200, type: typeof(Models.Party), description: "successful created")]
-        [SwaggerResponse(statusCode: 400, type: typeof(string), description: "invite link created")]
+        [SwaggerResponse(statusCode: 409, type: typeof(string), description: "Already in a party")]
         public async Task<ActionResult<Models.Party>> CreateParty(Models.PartyCreateOptions partyCreateOptions)
         {
             var userId = idService.UserId(this);
             Console.WriteLine("user id: " + userId);
             var currentParty = await GetCurrentParty(true);
             if (currentParty != null)
-                return BadRequest("You are already in a party, leave it first");
+                return Conflict("You are already in a party, leave it first");
 
             foreach (var item in db.Users.ToList())
             {
