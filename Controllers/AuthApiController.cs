@@ -77,9 +77,9 @@ namespace Coflnet.SongVoter.Controllers
         [Route("google")]
         [Consumes("application/json")]
         [ValidateModelState]
-        [SwaggerOperation("AuthWithGoogleCode")]
+        [SwaggerOperation("AuthWithGoogleToken")]
         [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<AuthToken> AuthWithGoogleCode([FromBody] AuthRefreshToken refreshToken)
+        public async Task<AuthToken> AuthWithGoogleToken([FromBody] AuthRefreshToken refreshToken)
         {
             // store refresh token
             var data = await ValidateToken(refreshToken.Token);
@@ -107,6 +107,42 @@ namespace Coflnet.SongVoter.Controllers
                 }
             });
             return await GetTokenForUser(data, refreshToken.RefreshToken, refreshToken.AccessToken);
+        }
+
+        /// <summary>
+        /// Authcode oauth2 flow for google
+        /// </summary>
+        /// <param name="authCode"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("google/code")]
+        [Consumes("application/json")]
+        [ValidateModelState]
+        [SwaggerOperation("AuthWithGoogle")]
+        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
+        public async Task<IActionResult> AuthWithGoogle([FromBody] AuthCode authCode)
+        {
+            try
+            {
+                var uri = new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account");
+                Console.WriteLine("Auth with google code " + authCode.Code + " redirect " + uri);
+                var token = await new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer()
+                {
+                    ClientSecrets = new ClientSecrets()
+                    {
+                        ClientId = config["google:clientid"],
+                        ClientSecret = config["google:clientsecret"]
+                    }
+                }).ExchangeCodeForTokenAsync("", authCode.Code, authCode.RedirectUri, System.Threading.CancellationToken.None);
+                Console.WriteLine("Got google token " + token.RefreshToken + " " + token.AccessToken);
+                var data = await ValidateToken(token.AccessToken);
+                return Ok(await GetTokenForUser(data, token.RefreshToken, token.AccessToken));
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         [HttpPost]
