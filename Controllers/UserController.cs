@@ -138,4 +138,23 @@ public class UserController : ControllerBase
         await db.SaveChangesAsync();
         return await GetUserInfo();
     }
+
+    /// <summary>
+    /// Deletes the current user, this action is final and cannot be undone
+    /// </summary>
+    /// <returns></returns>
+    [HttpDelete]
+    [Route("")]
+    [SwaggerOperation("DeleteUser")]
+    [SwaggerResponse(statusCode: 200, description: "successful deleted")]
+    public async Task<IActionResult> DeleteUser()
+    {
+        // delete owned parties
+        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).Include(u => u.Upvotes).Include(u => u.Downvotes).FirstOrDefaultAsync();
+        var parties = await db.Parties.Where(p => p.Creator == user).ToListAsync();
+        db.RemoveRange(parties);
+        db.Remove(user);
+        await db.SaveChangesAsync();
+        return Ok();
+    }
 }
