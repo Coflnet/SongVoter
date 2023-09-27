@@ -25,6 +25,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Services;
 using Microsoft.Extensions.Logging;
+using Google.Apis.Auth.OAuth2.Responses;
 
 namespace Coflnet.SongVoter.Controllers
 {
@@ -124,8 +125,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             try
             {
-                var uri = new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account");
-                Console.WriteLine("Auth with google code " + authCode.Code + " redirect " + uri);
+                Console.WriteLine("Auth with google code " + authCode.Code + " redirect " + authCode.RedirectUri);
                 var token = await new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer()
                 {
                     ClientSecrets = new ClientSecrets()
@@ -138,10 +138,10 @@ namespace Coflnet.SongVoter.Controllers
                 var data = await ValidateToken(token.AccessToken);
                 return Ok(await GetTokenForUser(data, token.RefreshToken, token.AccessToken));
             }
-            catch (System.Exception e)
+            catch(TokenResponseException e)
             {
-                Console.WriteLine(e);
-                throw;
+                logger.LogError(e, "Failed to get google token");
+                return BadRequest(e.Error);
             }
         }
 
