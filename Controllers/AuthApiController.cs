@@ -136,8 +136,9 @@ namespace Coflnet.SongVoter.Controllers
                 {
                     ClientSecrets = secrets
                 }).ExchangeCodeForTokenAsync("2", authCode.Code, authCode.RedirectUri, System.Threading.CancellationToken.None);
-                Console.WriteLine("Got google token " + token.RefreshToken + " " + token.AccessToken);
-                var data = await ValidateToken(token.AccessToken);
+                Console.WriteLine("Got google token " + JsonConvert.SerializeObject(token));
+                // get user info with token
+                var data = await ValidateToken(token.IdToken);
                 return Ok(await GetTokenForUser(data, token.RefreshToken, token.AccessToken));
             }
             catch (TokenResponseException e)
