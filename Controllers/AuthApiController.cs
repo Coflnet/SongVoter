@@ -126,19 +126,21 @@ namespace Coflnet.SongVoter.Controllers
             try
             {
                 Console.WriteLine("Auth with google code " + authCode.Code + " redirect " + authCode.RedirectUri);
-                var token = await new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer()
+                var secrets = new ClientSecrets
                 {
-                    ClientSecrets = new ClientSecrets()
-                    {
-                        ClientId = config["google:clientid"],
-                        ClientSecret = config["google:clientsecret"]
-                    }
-                }).ExchangeCodeForTokenAsync("", authCode.Code, authCode.RedirectUri, System.Threading.CancellationToken.None);
+                    ClientId = config["google:clientid"],
+                    ClientSecret = config["google:clientsecret"]
+                };
+                Console.WriteLine("Got google secrets " + secrets.ClientId + " " + secrets.ClientSecret?.Substring(0, 5) + "...");
+                var token = await new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = secrets
+                }).ExchangeCodeForTokenAsync("2", authCode.Code, authCode.RedirectUri, System.Threading.CancellationToken.None);
                 Console.WriteLine("Got google token " + token.RefreshToken + " " + token.AccessToken);
                 var data = await ValidateToken(token.AccessToken);
                 return Ok(await GetTokenForUser(data, token.RefreshToken, token.AccessToken));
             }
-            catch(TokenResponseException e)
+            catch (TokenResponseException e)
             {
                 logger.LogError(e, "Failed to get google token");
                 return BadRequest(e.Error);
