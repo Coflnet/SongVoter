@@ -70,9 +70,10 @@ public class UserController : ControllerBase
 
     private async Task<Oauth2Token> GetUpToDateToken(User user)
     {
-        var token = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
+        var token = user?.Tokens?.FirstOrDefault(t => t.Platform == Platforms.Spotify);
         if (token == null)
         {
+            logger.LogInformation($"No spotify token found for user {user?.Id}");
             return null;
         }
         logger.LogInformation("Spotify token expires at {0} refresh token starts with {1}", token.Expiration, token.RefreshToken?.Substring(0, 5));
@@ -108,7 +109,7 @@ public class UserController : ControllerBase
     [Route("info")]
     public async Task<UserInfo> GetUserInfo()
     {
-        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
+        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).FirstOrDefaultAsync();
         Oauth2Token token = await GetUpToDateToken(user);
         return new UserInfo()
         {

@@ -220,20 +220,24 @@ namespace Coflnet.SongVoter.Controllers
         private async Task<AuthToken> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
         {
             var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
+            var token = new Oauth2Token()
+            {
+                ExternalId = data.Subject,
+                Platform = Platforms.Youtube,
+                // add refresh token
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                Expiration = DateTime.UtcNow.AddSeconds(data.ExpirationTimeSeconds.Value)
+            };
             if (userId == 0)
             {
                 var user = new User()
                 {
                     GoogleId = data.Subject,
                     Name = data.Name,
-                    Tokens = new List<Oauth2Token>() { new Oauth2Token() {
-                        ExternalId = data.Subject,
-                        Platform = Platforms.Youtube,
-                        // add refresh token
-                        AccessToken = accessToken,
-                        RefreshToken = refreshToken,
-                        Expiration = DateTime.UtcNow.AddSeconds(data.ExpirationTimeSeconds.Value)
-                    } }
+                    Tokens = new List<Oauth2Token>() { 
+                        token
+                     }
                 };
                 db.Add(user);
                 await db.SaveChangesAsync();
