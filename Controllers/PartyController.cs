@@ -82,7 +82,7 @@ namespace Coflnet.SongVoter.Controllers
             {
                 Creator = user,
                 Name = partyCreateOptions.Name ?? "My party",
-                SupportedPlatforms = (Platforms) songTransformer.CombinePlatforms(partyCreateOptions.SupportedPlatforms)
+                SupportedPlatforms = (Platforms)songTransformer.CombinePlatforms(partyCreateOptions.SupportedPlatforms)
             };
             this.db.Add(party);
             await this.db.SaveChangesAsync();
@@ -110,23 +110,33 @@ namespace Coflnet.SongVoter.Controllers
 
         private async Task<PartySong> GetOrCreatePartySong(int pId, int sId)
         {
-            var partySong = await db.PartySongs
-                            .Where(ps => ps.PartyId == pId && ps.SongId == sId)
+            return (await GetOrCreatePartySongs(pId, new List<int>() { sId })).First();
+        }
+
+        private async Task<IEnumerable<PartySong>> GetOrCreatePartySongs(int pId, IList<int> songIds)
+        {
+            var partySongs = await db.PartySongs
+                            .Where(ps => ps.PartyId == pId && songIds.Contains(ps.SongId))
                             .Include(ps => ps.DownVoters)
                             .Include(ps => ps.UpVoters)
-                            .FirstOrDefaultAsync();
-            if (partySong == null)
+                            .ToListAsync();
+            if (partySongs.Count != songIds.Count)
             {
-                partySong = new PartySong()
+                var missing = songIds.Where(id => !partySongs.Any(ps => ps.SongId == id)).ToList();
+                foreach (var item in missing)
                 {
-                    PartyId = pId,
-                    SongId = sId
-                };
-                db.Add(partySong);
+                    partySongs.Add(new PartySong()
+                    {
+                        PartyId = pId,
+                        SongId = item
+                    });
+                }
+                db.AddRange(partySongs);
                 await db.SaveChangesAsync();
             }
-            return partySong;
+            return partySongs;
         }
+
         /// <summary>
         /// Returns all parties of the curent user
         /// </summary>
@@ -401,6 +411,25 @@ namespace Coflnet.SongVoter.Controllers
             var user = await CurrentUser();
             ps.DownVoters.Remove(user);
             ps.UpVoters.Add(user);
+            await db.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("add")]
+        [Authorize]
+        [ValidateModelState]
+        [SwaggerOperation("AddSongs")]
+        public async Task<IActionResult> AddSongs([FromBody, Required] List<string> songIds)
+        {
+            var currentParty = await GetCurrentParty();
+            var user = await CurrentUser();
+            var songs = await GetOrCreatePartySongs(currentParty.Id, songIds.Select(idService.FromHash).ToList());
+            foreach (var song in songs)
+            {
+                if (!song.UpVoters.Contains(user))
+                    song.UpVoters.Add(user);
+            }
             await db.SaveChangesAsync();
             return Ok();
         }
