@@ -34,14 +34,15 @@ public class SongApiController : ControllerBase
     private IConfiguration config;
     private ILogger<SongApiController> logger;
     private SongTransformer transformer;
-    private SpotifyClient spotifyClient;
-    public SongApiController(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer, ILogger<SongApiController> logger)
+    private SpotifyService spotifyService;
+    public SongApiController(SVContext data, IConfiguration config, IDService iDService, SongTransformer transformer, ILogger<SongApiController> logger, SpotifyService spotifyService)
     {
         this.db = data;
         idService = iDService;
         this.config = config;
         this.transformer = transformer;
         this.logger = logger;
+        this.spotifyService = spotifyService;
     }
 
     /// <summary>
@@ -61,7 +62,7 @@ public class SongApiController : ControllerBase
             return StatusCode(409, "Song already exists");
         IEnumerable<DBModels.Song> songs;
         if (body.Platform == SongPlatform.Spotify)
-            songs = new DBModels.Song[] { await GetSongFromSpotify(null, null) };
+            songs = new DBModels.Song[] { await spotifyService.GetSongFrom(null, null) };
         else if (body.Platform == SongPlatform.Youtube)
             songs = await GetSongDetailsFromYoutube(new string[] { body.ExternalId }, null);
         else
@@ -76,45 +77,7 @@ public class SongApiController : ControllerBase
         return Ok(transformer.ToApiSong(songs.First()));
     }
 
-    private async Task<DBModels.Song> GetSongFromSpotify(string trackId, string searchTerm)
-    {
-        SpotifyClient spotify = GetSpotifyclient();
 
-        var track = await spotify.Tracks.Get(trackId).ConfigureAwait(false);
-        return ConvertSpotifyToDbSong(searchTerm, track);
-    }
-
-    private static DBModels.Song ConvertSpotifyToDbSong(string searchTerm, FullTrack track)
-    {
-        var external = new DBModels.ExternalSong()
-        {
-            Artist = string.Join(", ", track.Artists.Select(a => a.Name)),
-            ExternalId = track.Id,
-            Platform = Platforms.Spotify,
-            ThumbnailUrl = track.Album.Images.First().Url,
-            Title = track.Name,
-            Duration = TimeSpan.FromMilliseconds(track.DurationMs)
-        };
-        var combined = external.Title + external.Artist + external.ExternalId + searchTerm;
-        return new DBModels.Song()
-        {
-            ExternalSongs = new System.Collections.Generic.List<DBModels.ExternalSong>() { external },
-            Title = track.Name,
-            Lookup = ConvertLookupText(combined)
-        };
-    }
-
-    private SpotifyClient GetSpotifyclient()
-    {
-        if (spotifyClient != null)
-            return spotifyClient;
-        var config = SpotifyClientConfig
-                                  .CreateDefault()
-                                  .WithAuthenticator(new ClientCredentialsAuthenticator(this.config["spotify:clientid"], this.config["spotify:clientsecret"]));
-        var spotify = new SpotifyClient(config);
-        spotifyClient = spotify;
-        return spotify;
-    }
 
     public static string ConvertLookupText(string combined)
     {
@@ -193,8 +156,8 @@ public class SongApiController : ControllerBase
         var internalpaltfomr = (SongVoter.DBModels.Platforms)combinedPlatforms;
         // search for song on youtube api
         var youtubeSearchTask = GetYoutubeSearchResult(term);
-        SearchResponse spotifyResponse = await SearchSpotify(term);
-        var spotifySongIds = await UpdateSpotifySongs(spotifyResponse, term);
+        SearchResponse spotifyResponse = await spotifyService.Search(term);
+        var spotifySongIds = await spotifyService.UpdateSongs(spotifyResponse, term);
         var youtubesongsIds = await UpdateYoutubeSongs(await youtubeSearchTask, term);
         var combinedSongIds = spotifySongIds.Concat(youtubesongsIds);
         var dbSongs = await db.Songs.Where(s => s.ExternalSongs.Any(e => combinedSongIds.Contains(e.ExternalId))).Include(s => s.ExternalSongs).ToListAsync();
@@ -204,54 +167,6 @@ public class SongApiController : ControllerBase
     }
 
 
-
-    private async Task<SearchResponse> SearchSpotify(string term)
-    {
-        var spotify = GetSpotifyclient();
-        var query = new SearchRequest(SearchRequest.Types.Track | SearchRequest.Types.Episode, term);
-        query.Limit = 20;
-        var spotifyResponse = await spotify.Search.Item(query);
-        return spotifyResponse;
-    }
-
-    private async Task<List<string>> UpdateSpotifySongs(SearchResponse spotifyResponse, string searchTerm)
-    {
-        var spotifyIds = spotifyResponse.Tracks.Items.Select(i => i.Id);
-        spotifyResponse.Tracks.Items.First().Album.Images.First().Url.ToString();
-        var spotifyExisting = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).Select(e => e.ExternalId).ToListAsync();
-        if (spotifyExisting.Count != spotifyIds.Count())
-        {
-            // execute in parallel
-            foreach (var item in spotifyIds.Where(i => !spotifyExisting.Contains(i)))
-            {
-                try
-                {
-                    var songsToAdd = ConvertSpotifyToDbSong(searchTerm, spotifyResponse.Tracks.Items.First(i => i.Id == item));
-                    db.Add(songsToAdd);
-                }
-                catch (System.Exception e)
-                {
-                    logger.LogError(e, "Error while parsing spotify song " + item);
-                }
-            }
-            await db.SaveChangesAsync();
-        }
-        else
-        {
-            // update song titles TODO: move this to background job
-            // var spotifySongs = await db.ExternalSongs.Where(s => spotifyIds.Contains(s.ExternalId)).ToListAsync();
-            // foreach (var song in spotifySongs)
-            // {
-            //     var item = spotifyResponse.Tracks.Items.First(i => i.Id == song.ExternalId);
-            //     song.Title = item.Name;
-            //     song.ThumbnailUrl = item.Album.Images.First().Url;
-            //     song.Artist = item.Artists.First().Name;
-            //     song.Duration = TimeSpan.FromMilliseconds(item.DurationMs);
-            // }
-            // await db.SaveChangesAsync();
-        }
-        return spotifyIds.ToList();
-    }
 
     private async Task<List<string>> UpdateYoutubeSongs(SearchListResponse response, string term)
     {

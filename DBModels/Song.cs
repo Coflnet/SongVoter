@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Coflnet.SongVoter.DBModels
@@ -23,5 +24,23 @@ namespace Coflnet.SongVoter.DBModels
         /// here to autogenerate many-to-many table
         /// </summary>
         public ICollection<Playlist> Playlists { get; set; }
+
+        public Song()
+        {
+            ExternalSongs = new List<ExternalSong>();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Song song &&
+                   Id == song.Id &&
+                   Title == song.Title &&
+                   Lookup == song.Lookup;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, Title, Lookup);
+        }
     }
 }

@@ -154,6 +154,7 @@ namespace Coflnet.SongVoter
             });
             services.AddSingleton<SongTransformer>();
             services.AddSingleton<IDService>();
+            services.AddTransient<SpotifyService>();
             services.AddHealthChecks();
             services.AddCoflnetCore();
             services.AddHealthChecks().AddCheck<DbHealthCheck>("db_health_check");

@@ -18,11 +18,13 @@ namespace Coflnet.SongVoter.Controllers
     {
         private SVContext db;
         private IDService iDService;
+        private SpotifyService spotifyService;
 
-        public ListApiControllerImpl(SVContext db, IDService idService)
+        public ListApiControllerImpl(SVContext db, IDService idService, SpotifyService spotifyService)
         {
             this.db = db;
             iDService = idService;
+            this.spotifyService = spotifyService;
         }
 
         /// <summary>
@@ -66,9 +68,7 @@ namespace Coflnet.SongVoter.Controllers
         [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
         public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] SongId songId)
         {
-            var dbId = iDService.FromHash(listId);
-            var userId = GetUserId();
-            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            Playlist list = await GetPlayList(listId);
             if (list == null)
             {
                 return NotFound("list not found");
@@ -79,6 +79,42 @@ namespace Coflnet.SongVoter.Controllers
                 return NotFound("song not found");
             }
             list.Songs.Add(song);
+            await db.SaveChangesAsync();
+            return Ok(DBToApiPlaylist(list));
+        }
+
+        private async Task<Playlist> GetPlayList(string listId)
+        {
+            var dbId = iDService.FromHash(listId);
+            var userId = GetUserId();
+            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
+            return list;
+        }
+
+        /// <summary>
+        /// Batch import playlist from spotify
+        /// </summary>
+        /// <param name="listId"></param>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{listId}/songs/spotify")]
+        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
+        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
+        public async Task<IActionResult> AddSpotifySongsToList(string listId, [FromBody] List<string> ids)
+        {
+            Playlist list = await GetPlayList(listId);
+            if (list == null)
+            {
+                return NotFound("list not found");
+            }
+            var songs = await spotifyService.GetOrCreate(ids);
+            foreach (var song in songs)
+            {
+                if (list.Songs.Contains(song))
+                    continue;
+                list.Songs.Add(song);
+            }
             await db.SaveChangesAsync();
             return Ok(DBToApiPlaylist(list));
         }
