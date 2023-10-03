@@ -80,7 +80,7 @@ public class UserController : ControllerBase
         // refresh token if needed
         if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5) && token.AccessToken != null)
         {
-            if(token.RefreshToken == null)
+            if (token.RefreshToken == null)
             {
                 token.AccessToken = null;
                 db.Update(token);
@@ -151,9 +151,11 @@ public class UserController : ControllerBase
     public async Task<IActionResult> DeleteUser()
     {
         // delete owned parties
-        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).Include(u => u.Upvotes).Include(u => u.Downvotes).FirstOrDefaultAsync();
+        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).Include(u => u.Upvotes).Include(u => u.Downvotes).Include(u => u.Parties).FirstOrDefaultAsync();
         var parties = await db.Parties.Where(p => p.Creator == user).ToListAsync();
         db.RemoveRange(parties);
+        user.Parties.Clear();
+        await db.SaveChangesAsync();
         db.Remove(user);
         await db.SaveChangesAsync();
         return Ok();

@@ -22,11 +22,13 @@ namespace Coflnet.SongVoter.Controllers
         private readonly SVContext db;
         private IDService idService;
         private SongTransformer songTransformer;
-        public PartyController(SVContext data, IDService idService, SongTransformer songTransformer)
+        private PartyService partyService;
+        public PartyController(SVContext data, IDService idService, SongTransformer songTransformer, PartyService partyService)
         {
             this.db = data;
             this.idService = idService;
             this.songTransformer = songTransformer;
+            this.partyService = partyService;
         }
         /// <summary>
         /// Creates an invite link for a party
@@ -123,11 +125,11 @@ namespace Coflnet.SongVoter.Controllers
             if (partySongs.Count != songIds.Count)
             {
                 var missing = songIds.Where(id => !partySongs.Any(ps => ps.SongId == id)).ToList();
-                var songs = await db.Songs.Where(s => missing.Contains(s.Id)).Include(s=>s.ExternalSongs).ToListAsync();
+                var songs = await db.Songs.Where(s => missing.Contains(s.Id)).Include(s => s.ExternalSongs).ToListAsync();
                 foreach (var item in missing)
                 {
                     var song = songs.FirstOrDefault(s => s.Id == item) ?? throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Song with id {idService.ToHash(item)} found");
-                    if(!song.ExternalSongs.Any(e=>party.SupportedPlatforms.HasFlag(e.Platform)))
+                    if (!song.ExternalSongs.Any(e => party.SupportedPlatforms.HasFlag(e.Platform)))
                         continue; // unsupported platform for this party
                     partySongs.Add(new PartySong()
                     {
@@ -163,13 +165,10 @@ namespace Coflnet.SongVoter.Controllers
         private async Task<Party> GetCurrentParty(bool allowNull = false)
         {
             var user = await CurrentUser();
-            var parties = await db.Parties.Where(p => p.Creator == user || p.Members.Contains(user))
-                .Include(p => p.Members)
-                .Include(c => c.Creator).FirstOrDefaultAsync();
-            if (parties == null && !allowNull)
-                throw new ApiException(System.Net.HttpStatusCode.NotFound, "You are not in a party");
-            return parties;
+            return await partyService.GetUserParty(user, allowNull);
         }
+
+
 
         /// <summary>
         /// Invites a user to a party
@@ -275,33 +274,7 @@ namespace Coflnet.SongVoter.Controllers
         public async Task<IActionResult> LeaveParty()
         {
             var user = await CurrentUser();
-            var party = await GetCurrentParty();
-            if (party == null)
-                return Ok("no party to leave");
-            if (party.Creator == user)
-            {
-                // transfer ownership to other member if possible
-                if (party.Members.Count > 0)
-                {
-                    party.Creator = party.Members.First();
-                    party.Members.Remove(party.Creator);
-                    db.Update(party);
-                    await db.SaveChangesAsync();
-                    Console.WriteLine("transfared party");
-                }
-                else
-                {
-                    // remove invites
-                    var invites = await db.Invites.Where(i => i.Party == party).ToListAsync();
-                    db.RemoveRange(invites);
-                    db.Remove(party);
-                    await db.SaveChangesAsync();
-                }
-                return Ok("transfared/deleted party");
-            }
-            party.Members.Remove(user);
-            db.Update(party);
-            await db.SaveChangesAsync();
+            await partyService.LeaveParty(user);
             return Ok();
         }
 
