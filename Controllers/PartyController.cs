@@ -108,26 +108,30 @@ namespace Coflnet.SongVoter.Controllers
             return await db.Users.FindAsync((int)idService.UserId(this));
         }
 
-        private async Task<PartySong> GetOrCreatePartySong(int pId, int sId)
+        private async Task<PartySong> GetOrCreatePartySong(Party party, int sId)
         {
-            return (await GetOrCreatePartySongs(pId, new List<int>() { sId })).First();
+            return (await GetOrCreatePartySongs(party, new List<int>() { sId })).First();
         }
 
-        private async Task<IEnumerable<PartySong>> GetOrCreatePartySongs(int pId, IList<int> songIds)
+        private async Task<IEnumerable<PartySong>> GetOrCreatePartySongs(Party party, IList<int> songIds)
         {
             var partySongs = await db.PartySongs
-                            .Where(ps => ps.PartyId == pId && songIds.Contains(ps.SongId))
+                            .Where(ps => ps.PartyId == party.Id && songIds.Contains(ps.SongId))
                             .Include(ps => ps.DownVoters)
                             .Include(ps => ps.UpVoters)
                             .ToListAsync();
             if (partySongs.Count != songIds.Count)
             {
                 var missing = songIds.Where(id => !partySongs.Any(ps => ps.SongId == id)).ToList();
+                var songs = await db.Songs.Where(s => missing.Contains(s.Id)).Include(s=>s.ExternalSongs).ToListAsync();
                 foreach (var item in missing)
                 {
+                    var song = songs.FirstOrDefault(s => s.Id == item) ?? throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Song with id {idService.ToHash(item)} found");
+                    if(!song.ExternalSongs.Any(e=>party.SupportedPlatforms.HasFlag(e.Platform)))
+                        continue; // unsupported platform for this party
                     partySongs.Add(new PartySong()
                     {
-                        PartyId = pId,
+                        PartyId = party.Id,
                         SongId = item
                     });
                 }
@@ -229,7 +233,7 @@ namespace Coflnet.SongVoter.Controllers
             foreach (var item in list.Songs)
             {
                 // currently they are never removed
-                var song = await GetOrCreatePartySong(party.Id, item.Id);
+                var song = await GetOrCreatePartySong(party, item.Id);
                 song.UpVoters.Add(user);
                 //song.DownVoters.Add(user);
                 db.Update(song);
@@ -366,7 +370,7 @@ namespace Coflnet.SongVoter.Controllers
             if (song == null)
                 return NotFound();
             var party = await GetCurrentParty();
-            var partySong = await GetOrCreatePartySong(party.Id, song.Id);
+            var partySong = await GetOrCreatePartySong(party, song.Id);
             partySong.PlayedTimes++;
             db.Update(partySong);
             await db.SaveChangesAsync();
@@ -424,7 +428,7 @@ namespace Coflnet.SongVoter.Controllers
         {
             var currentParty = await GetCurrentParty();
             var user = await CurrentUser();
-            var songs = await GetOrCreatePartySongs(currentParty.Id, songIds.Select(idService.FromHash).ToList());
+            var songs = await GetOrCreatePartySongs(currentParty, songIds.Select(idService.FromHash).ToList());
             foreach (var song in songs)
             {
                 if (!song.UpVoters.Contains(user))
@@ -437,7 +441,7 @@ namespace Coflnet.SongVoter.Controllers
         private async Task<PartySong> GetOrCreatePartySong(string songId)
         {
             var currentParty = await GetCurrentParty();
-            var ps = await GetOrCreatePartySong(currentParty.Id, (int)idService.FromHash(songId));
+            var ps = await GetOrCreatePartySong(currentParty, (int)idService.FromHash(songId));
             return ps;
         }
 
