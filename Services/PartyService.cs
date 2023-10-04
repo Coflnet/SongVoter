@@ -29,28 +29,27 @@ public class PartyService
     public async Task LeaveParty(User user)
     {
         var party = await GetUserParty(user);
-        if (party.Creator == user)
+        if (party.Creator != user)
         {
-            // transfer ownership to other member if possible
-            if (party.Members.Count > 0)
-            {
-                party.Creator = party.Members.First();
-                party.Members.Remove(party.Creator);
-                db.Update(party);
-                await db.SaveChangesAsync();
-                Console.WriteLine("transfared party");
-            }
-            else
-            {
-                // remove invites
-                var invites = await db.Invites.Where(i => i.Party == party).ToListAsync();
-                db.RemoveRange(invites);
-                db.Remove(party);
-                await db.SaveChangesAsync();
-            }
+            party.Members.Remove(user);
+            db.Update(party);
+            await db.SaveChangesAsync();
+            return;
         }
-        party.Members.Remove(user);
-        db.Update(party);
+        // transfer ownership to other member if possible
+        if (party.Members.Count > 0)
+        {
+            party.Creator = party.Members.First();
+            party.Members.Remove(party.Creator);
+            db.Update(party);
+            await db.SaveChangesAsync();
+            Console.WriteLine("transfared party");
+            return;
+        }
+        // remove invites and delete party
+        var invites = await db.Invites.Where(i => i.Party == party).ToListAsync();
+        db.RemoveRange(invites);
+        db.Remove(party);
         await db.SaveChangesAsync();
     }
 }
