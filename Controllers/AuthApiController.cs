@@ -271,6 +271,7 @@ namespace Coflnet.SongVoter.Controllers
             };
             db.Add(user);
             await db.SaveChangesAsync();
+            logger.LogInformation($"Created anonymous user {user.Id}");
             return Ok(new AuthToken() { Token = CreateTokenFor(user.Id) });
         }
 

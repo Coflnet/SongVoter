@@ -6,6 +6,7 @@ using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -52,6 +53,7 @@ public class UserController : ControllerBase
     /// <returns></returns>
     [HttpGet]
     [Route("spotify/token")]
+    [Authorize]
     [Consumes("application/json")]
     public async Task<ActionResult<string>> GetSpotifyToken()
     {
@@ -107,9 +109,16 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Route("info")]
+    [Authorize]
     public async Task<UserInfo> GetUserInfo()
     {
-        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).FirstOrDefaultAsync();
+        var id = (int)idService.UserId(this);
+        var user = await db.Users.Where(u => u.Id == id).Include(u => u.Tokens).FirstOrDefaultAsync();
+        if (user == null)
+        {
+            logger.LogWarning($"User {id} not found");
+            throw new Core.ApiException("user_not_found", "User not found");
+        }
         Oauth2Token token = await GetUpToDateToken(user);
         return new UserInfo()
         {
@@ -126,6 +135,7 @@ public class UserController : ControllerBase
     /// <returns></returns>
     /// <exception cref="Core.ApiException"></exception>
     [HttpDelete]
+    [Authorize]
     [Route("spotify")]
     public async Task<UserInfo> DisconnectSpotify()
     {
@@ -146,18 +156,20 @@ public class UserController : ControllerBase
     /// <returns></returns>
     [HttpDelete]
     [Route("")]
+    [Authorize]
     [SwaggerOperation("DeleteUser")]
     [SwaggerResponse(statusCode: 200, description: "successful deleted")]
     public async Task<IActionResult> DeleteUser()
     {
         // delete owned parties
-        var user = await db.Users.Where(u => u.Id == (int)idService.UserId(this)).Include(u => u.Tokens).Include(u => u.Upvotes).Include(u => u.Downvotes).Include(u => u.Parties).FirstOrDefaultAsync();
+        var id = (int)idService.UserId(this);
+        var user = await db.Users.Where(u => u.Id == id).Include(u => u.Tokens).Include(u => u.Upvotes).Include(u => u.Downvotes).Include(u => u.Parties).FirstOrDefaultAsync();
         var parties = await db.Parties.Where(p => p.Creator == user).ToListAsync();
         db.RemoveRange(parties);
         user.Parties.Clear();
-        await db.SaveChangesAsync();
         db.Remove(user);
         await db.SaveChangesAsync();
+        logger.LogInformation($"Deleted user {id}");
         return Ok();
     }
 }
