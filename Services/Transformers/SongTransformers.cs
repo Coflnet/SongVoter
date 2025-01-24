@@ -29,7 +29,7 @@ namespace Coflnet.SongVoter.Transformers
                 {
                     Artist = s.Artist,
                     ExternalId = s.ExternalId,
-                    Platform = (SongPlatform) s.Platform,
+                    Platform = (SongPlatform)s.Platform,
                     Thumbnail = s.ThumbnailUrl,
                     Title = s.Title,
                     DurationMs = (int)s.Duration.TotalMilliseconds
@@ -54,6 +54,8 @@ namespace Coflnet.SongVoter.Transformers
 
         public SongPlatform CombinePlatforms(SongPlatform[] platforms)
         {
+            if (platforms.Length == 0)
+                return SongPlatform.Youtube | SongPlatform.Spotify;
             platforms = platforms ?? new SongPlatform[] { SongPlatform.Spotify, SongPlatform.Youtube };
             SongPlatform combinedPlatforms = platforms.Aggregate((a, b) => a | b);
             return combinedPlatforms;
