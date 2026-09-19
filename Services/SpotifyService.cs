@@ -41,9 +41,10 @@ public class SpotifyService
         Song[] newTracks = new Song[0];
         if (missingIds.Count > 0)
         {
-            var request = new TracksRequest(missingIds);
-            var tracks = await spotify.Tracks.GetSeveral(request).ConfigureAwait(false);
-            newTracks = tracks.Tracks.Select(t => ConvertSpotifyToDbSong(t.Name, t)).ToArray();
+            var tracks = new List<FullTrack>();
+            foreach (var id in missingIds)
+                tracks.Add(await spotify.Tracks.Get(id).ConfigureAwait(false));
+            newTracks = tracks.Select(t => ConvertSpotifyToDbSong(t.Name, t)).ToArray();
             db.Songs.AddRange(newTracks);
             await db.SaveChangesAsync();
         }

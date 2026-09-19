@@ -18,7 +18,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Coflnet.SongVoter.Authentication;
@@ -33,7 +33,7 @@ using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Middleware;
 using Coflnet.SongVoter.Transformers;
 using Coflnet.SongVoter.Service;
-using Coflnet.Core;
+
 
 namespace Coflnet.SongVoter
 {
@@ -107,7 +107,7 @@ namespace Coflnet.SongVoter
 
                     // Include DataAnnotation attributes on Controller Action parameters as OpenAPI validation rules (e.g required, pattern, ..)
                     // Use [ValidateModelState] on Actions to actually validate it in C# as well!
-                    c.OperationFilter<GeneratePathParamsValidationFilter>();
+
                 });
             services
                 .AddSwaggerGenNewtonsoftSupport();
@@ -141,7 +141,7 @@ namespace Coflnet.SongVoter
                         {
                             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                             {
-                                context.Response.Headers.Add("Token-Expired", "true");
+                                context.Response.Headers["Token-Expired"] = "true";
                             }
                             return Task.CompletedTask;
                         }
@@ -157,7 +157,7 @@ namespace Coflnet.SongVoter
             services.AddTransient<SpotifyService>();
             services.AddTransient<PartyService>();
             services.AddHealthChecks();
-            services.AddCoflnetCore();
+
             services.AddHealthChecks().AddCheck<DbHealthCheck>("db_health_check");
 
             Console.WriteLine("registered all");
@@ -178,7 +178,7 @@ namespace Coflnet.SongVoter
             {
                 app.UseHsts();
             }
-            app.UseCoflnetCore();
+
             app.UseMiddleware<ErrorMiddleware>();
 
             app.UseSwagger(c =>

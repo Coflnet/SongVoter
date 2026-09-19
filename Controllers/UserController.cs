@@ -65,7 +65,7 @@ public class UserController : ControllerBase
         Oauth2Token token = await GetUpToDateToken(user);
         if (token == null)
         {
-            throw new Core.ApiException("no_spotify_token", "No spotify token found");
+            throw new Middleware.ApiException(System.Net.HttpStatusCode.NotFound, "No spotify token found");
         }
         return token.AccessToken;
     }
@@ -117,7 +117,7 @@ public class UserController : ControllerBase
         if (user == null)
         {
             logger.LogWarning($"User {id} not found");
-            throw new Core.ApiException("user_not_found", "User not found");
+            throw new Middleware.ApiException(System.Net.HttpStatusCode.NotFound, "User not found");
         }
         Oauth2Token token = await GetUpToDateToken(user);
         return new UserInfo()
@@ -143,7 +143,7 @@ public class UserController : ControllerBase
         var token = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
         if (token == null)
         {
-            throw new Core.ApiException("no_spotify_token", "No spotify token found");
+            throw new Middleware.ApiException(System.Net.HttpStatusCode.NotFound, "No spotify token found");
         }
         db.Remove(token);
         await db.SaveChangesAsync();

@@ -1,1 +1,12 @@
+.git
+.agents
+.codex
+bin
+obj
+**/bin
+**/obj
+**/node_modules
 mariadb_data
+.env
+appsettings*.json
+!appsettings.example.json

@@ -1,32 +1,26 @@
-version: "3"
 services:
   songvoter:
     build: .
+    ports:
+      - "127.0.0.1:4200:4200"
     environment:
-      - USER_UID=1000
-      - USER_GID=1000
-    restart: always
-    networks:
-      - songvoter
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.songvoter.entrypoints=http"
-      - "traefik.http.routers.songvoter.rule=Host(`${SV_DOMAIN}`)"
-      - "traefik.http.routers.traefik.middlewares=https-redirect@file"
-      - "traefik.http.routers.songvoter-secure.entrypoints=https"
-      - "traefik.http.routers.songvoter-secure.rule=Host(`${SV_DOMAIN}`)"
-      - "traefik.http.routers.songvoter-secure.tls=true"
-      - "traefik.http.routers.songvoter-secure.tls.certresolver=http"
-      - "traefik.http.routers.songvoter-secure.service=songvoter"
-      - "traefik.http.services.songvoter.loadbalancer.server.port=4200"
-      - "traefik.docker.network=proxy"
-  devdb:
-    image: 'docker.io/bitnami/mariadb:10.3-debian-10'
+      DB_CONNECTION: Host=db;Database=songvoter;Username=songvoter;Password=songvoter
+      jwt__secret: ${SONGVOTER_JWT_SECRET:?Set SONGVOTER_JWT_SECRET to a random 32-byte or longer secret}
+      hashids__salt: ${SONGVOTER_ID_SALT:?Set SONGVOTER_ID_SALT}
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:18-alpine
     environment:
-      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      POSTGRES_USER: songvoter
+      POSTGRES_PASSWORD: songvoter
+      POSTGRES_DB: songvoter
     volumes:
-      - './mariadb_data:/bitnami'
-    networks:
-      - songvoter
-networks:
-  songvoter:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U songvoter"]
+      interval: 3s
+      retries: 20
+volumes:
+  postgres:

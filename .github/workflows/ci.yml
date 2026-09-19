@@ -1,0 +1,21 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+jobs:
+  container-ci:
+    uses: Coflnet/.github/.github/workflows/container-ci.yml@main
+    with:
+      k8s_file: songvoter/chart/charts/songvoter/values.yaml
+      repo_url: https://github.com/Coflnet/fleet
+      scan_with_trivy: true
+    secrets:
+      ARGO_WEBHOOK_SECRET: ${{ secrets.ARGO_WEBHOOK_SECRET }}
