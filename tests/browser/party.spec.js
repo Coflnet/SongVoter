@@ -31,7 +31,10 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await expect(page.getByText('Friday kitchen party', {exact:false})).toBeVisible({timeout:45000});
     await expect(page.getByText('Sign in', {exact:true})).toHaveCount(0);
     await expect(page.getByRole('button', {name:'Start the music'})).toHaveCount(0);
-    await page.getByRole('textbox', {name:'Find a song or paste a link'}).fill('Midnight City');
+    const search = page.getByRole('textbox', {name:'Find a song or paste a link'});
+    await search.click();
+    await search.pressSequentially('Midnight City');
+    await expect(search).toHaveValue('Midnight City');
     await page.getByRole('button', {name:'Search songs', exact:true}).click();
     const add = page.getByRole('button', {name:'Add Midnight City to favourites', exact:true});
     await expect(add).toBeVisible();
