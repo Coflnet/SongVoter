@@ -73,10 +73,8 @@ public class SongCatalog(SVContext db, IEnumerable<IMusicCatalog> providers, ILo
 
     private async Task<Song> Store(ExternalSong external)
     {
-        using var transaction = await db.Database.BeginTransactionAsync();
-        // Serialise insertion for one provider ID without merging unrelated songs with similar titles.
-        var key = $"{external.Platform}:{external.ExternalId}";
-        await db.Database.ExecuteSqlInterpolatedAsync($"SELECT pg_advisory_xact_lock(hashtextextended({key}, 0))");
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        // The predicate read and insertion commit together, including concurrent imports.
         var song = await Find(external.Platform, external.ExternalId);
         if (song == null) {
             song = new Song { Title = external.Title, Lookup = Lookup(external.Title + external.Artist + external.ExternalId), ExternalSongs = [external] };

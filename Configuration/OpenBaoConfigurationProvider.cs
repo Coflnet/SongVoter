@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 
@@ -69,7 +71,17 @@ internal sealed class OpenBaoConfigurationProvider : ConfigurationProvider, IDis
     {
         options.Validate();
         var jwt = await File.ReadAllTextAsync(options.TokenPath).ConfigureAwait(false);
-        using var client = new HttpClient { BaseAddress = new Uri(options.Address.TrimEnd('/') + "/") };
+        using var handler = new SocketsHttpHandler();
+        if (!string.IsNullOrWhiteSpace(options.CaCert))
+        {
+            handler.SslOptions.CertificateChainPolicy = new X509ChainPolicy
+            {
+                TrustMode = X509ChainTrustMode.CustomRootTrust,
+                RevocationMode = X509RevocationMode.NoCheck
+            };
+            handler.SslOptions.CertificateChainPolicy.CustomTrustStore.Add(X509Certificate2.CreateFromPemFile(options.CaCert));
+        }
+        using var client = new HttpClient(handler) { BaseAddress = new Uri(options.Address.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(15) };
 
         var loginPayload = JsonSerializer.Serialize(new { role = options.Role, jwt });
         using var loginRequest = new HttpRequestMessage(HttpMethod.Post, $"v1/auth/{options.AuthPath.Trim('/')}/login")
@@ -109,6 +121,7 @@ internal sealed record OpenBaoOptions
     public bool Enabled { get; init; }
     public bool Optional { get; init; }
     public string Address { get; init; } = "";
+    public string CaCert { get; init; } = "";
     public string AuthPath { get; init; } = "kubernetes";
     public string Mount { get; init; } = "kv";
     public string Path { get; init; } = "";
@@ -123,6 +136,7 @@ internal sealed record OpenBaoOptions
             Enabled = Bool("OPENBAO__ENABLED", false),
             Optional = Bool("OPENBAO__OPTIONAL", true),
             Address = Env("OPENBAO__ADDR"),
+            CaCert = Env("OPENBAO__CACERT"),
             AuthPath = Env("OPENBAO__AUTH_PATH", "kubernetes"),
             Mount = Env("OPENBAO__MOUNT", "kv"),
             Path = Env("OPENBAO__PATH"),
