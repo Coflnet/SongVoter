@@ -11,7 +11,10 @@ permissions:
   id-token: write
   security-events: write
 jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
   container-ci:
+    needs: verify
     uses: Coflnet/.github/.github/workflows/container-ci.yml@main
     with:
       k8s_file: songvoter/chart/charts/songvoter/values.yaml

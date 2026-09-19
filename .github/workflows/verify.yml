@@ -1,0 +1,33 @@
+name: Verify
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: songvoter
+          POSTGRES_PASSWORD: songvoter
+          POSTGRES_DB: songvoter
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U songvoter"
+          --health-interval 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore tests/SongVoter.Tests --locked-mode
+      - run: dotnet test tests/SongVoter.Tests --no-restore --logger trx
+        env:
+          SV_TEST_DATABASE: Host=localhost;Database=songvoter;Username=songvoter;Password=songvoter
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: tests/SongVoter.Tests/TestResults

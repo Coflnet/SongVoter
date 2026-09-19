@@ -6,6 +6,9 @@ COPY . .
 COPY appsettings.example.json appsettings.json
 RUN dotnet publish -c Release --no-restore -o /app/publish
 
+FROM build AS test
+RUN dotnet restore tests/SongVoter.Tests --locked-mode && dotnet test tests/SongVoter.Tests --no-restore --filter Category=Unit
+
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 4200

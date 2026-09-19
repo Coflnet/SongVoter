@@ -1,33 +1,30 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Coflnet.Security.OpenBao;
+using Coflnet.SongVoter.DBModels;
 
-namespace Coflnet.SongVoter
+namespace Coflnet.SongVoter;
+
+public class Program
 {
-    /// <summary>
-    /// Program
-    /// </summary>
-    public class Program
+    public static async Task Main(string[] args)
     {
-        /// <summary>
-        /// Main
-        /// </summary>
-        /// <param name="args"></param>
-        public static void Main(string[] args)
-        {
-            CreateHostBuilder(args).Build().Run();
+        using var host = CreateHostBuilder(args.Where(a => a != "--migrate-only").ToArray()).Build();
+        if (args.Contains("--migrate-only")) {
+            using var scope = host.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<SVContext>().Database.MigrateAsync();
+            return;
         }
-
-        /// <summary>
-        /// Create the host builder.
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns>IHostBuilder</returns>
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                   webBuilder.UseStartup<Startup>()
-                             .UseUrls("http://0.0.0.0:4200/");
-                });
+        await host.RunAsync();
     }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args)
+        .ConfigureAppConfiguration((_, config) => config.AddOpenBaoFromEnvironment())
+        .ConfigureWebHostDefaults(builder => builder.UseStartup<Startup>()
+            .UseUrls(Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:4200"));
 }
