@@ -55,6 +55,7 @@ public class PartyController(SVContext db, IDService ids, SongTransformer transf
     [HttpPost]
     public async Task<IActionResult> Create(CreateRequest request)
     {
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         var user = await CurrentUser();
         if (await parties.GetUserParty(user, true) != null) return Conflict("Leave your current party first.");
         var platforms = transformer.CombinePlatforms(request.SupportedPlatforms);
@@ -62,7 +63,6 @@ public class PartyController(SVContext db, IDService ids, SongTransformer transf
             return BadRequest("Choose YouTube, Spotify, or both.");
         var party = new Party { Creator = user, Name = request.Name.Trim(), SupportedPlatforms = (Platforms)platforms, Members = [] };
         if (party.Name.Length == 0) return BadRequest("Give your party a name.");
-        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         db.Add(party);
         db.Add(NewInvite(party, user));
         await db.SaveChangesAsync();

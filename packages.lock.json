@@ -29,15 +29,6 @@
         "resolved": "1.7.0",
         "contentHash": "TuQ8ns5c+eeIOHSgJdwCLb0nWzKqn2gCPSLFoz6nWdhw3tS5Wa43qrwRXT4UJT7XVgHqKssacVU1SGlAOWjeIg=="
       },
-      "JsonSubTypes": {
-        "type": "Direct",
-        "requested": "[2.1.0, )",
-        "resolved": "2.1.0",
-        "contentHash": "nkH+ezOpWFBBPSNZGteLliUTG6O36zsPuvvvXv/LV2LxSlLay+3hyXuzyBUXLK1FJmj9Q1zrfDYXoogNFaINAg==",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.4"
-        }
-      },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
         "type": "Direct",
         "requested": "[10.0.12, )",
@@ -95,23 +86,13 @@
           "Npgsql": "10.0.3"
         }
       },
-      "SpotifyAPI.Web.Auth": {
+      "SpotifyAPI.Web": {
         "type": "Direct",
         "requested": "[7.4.2, )",
         "resolved": "7.4.2",
-        "contentHash": "+Og2S4d8Q/lrZsBXlgPt0FieigtzVHj1Lg6+eDF+5RwVpKsfwQjW7aVfaDyktVCo56T2qOBjbqC/XluIxXGJgQ==",
+        "contentHash": "DxyIO+oxI7gyqyGJ5QzVWf31JInRDRhqGtTXIKX6HUJBie+aR+OuB4bFSYWNVO6GL4V+Tm3PQBKNBa+UJzchOA==",
         "dependencies": {
-          "EmbedIO": "3.5.2",
-          "SpotifyAPI.Web": "7.4.2"
-        }
-      },
-      "Swashbuckle.AspNetCore.Annotations": {
-        "type": "Direct",
-        "requested": "[10.2.3, )",
-        "resolved": "10.2.3",
-        "contentHash": "plbv/9BrcOQfCop5avxdMzp9Qw3jRPdCDaCkwIAYmEcjPUhNwUKqIYBPcXfAU4Jw5gVGj1bKTUuwYx9M43hPPg==",
-        "dependencies": {
-          "Swashbuckle.AspNetCore.SwaggerGen": "10.2.3"
+          "Newtonsoft.Json": "13.0.3"
         }
       },
       "Swashbuckle.AspNetCore.Newtonsoft": {
@@ -129,14 +110,6 @@
         "requested": "[10.2.3, )",
         "resolved": "10.2.3",
         "contentHash": "nthWONRs/FJ4yyG206g1cC52WEG8EqrjuMWjGdR+5XG7lbjFto6NqcI9EMICgVFom/UivIjUVwI76ZHbHwTPfQ=="
-      },
-      "EmbedIO": {
-        "type": "Transitive",
-        "resolved": "3.5.2",
-        "contentHash": "YU4j+3XvuO8/VPkNf7KWOF1TpMhnyVhXnPsG1mvnDhTJ9D5BZOFXVDvCpE/SkQ1AJ0Aa+dXOVSW3ntgmLL7aJg==",
-        "dependencies": {
-          "Unosquare.Swan.Lite": "3.1.0"
-        }
       },
       "Google.Apis": {
         "type": "Transitive",
@@ -344,14 +317,6 @@
         "resolved": "10.0.3",
         "contentHash": "7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w=="
       },
-      "SpotifyAPI.Web": {
-        "type": "Transitive",
-        "resolved": "7.4.2",
-        "contentHash": "DxyIO+oxI7gyqyGJ5QzVWf31JInRDRhqGtTXIKX6HUJBie+aR+OuB4bFSYWNVO6GL4V+Tm3PQBKNBa+UJzchOA==",
-        "dependencies": {
-          "Newtonsoft.Json": "13.0.3"
-        }
-      },
       "Swashbuckle.AspNetCore.Swagger": {
         "type": "Transitive",
         "resolved": "10.2.3",
@@ -437,11 +402,6 @@
         "dependencies": {
           "System.CodeDom": "7.0.0"
         }
-      },
-      "Unosquare.Swan.Lite": {
-        "type": "Transitive",
-        "resolved": "3.1.0",
-        "contentHash": "X3s5QE/KMj3WAPFqFve7St+Ds10BB50u8kW8PmKIn7FVkn7yEXe9Yxr2htt1WV85DRqfFR0MN/BUNHkGHtL4OQ=="
       }
     }
   }

@@ -40,6 +40,14 @@ public class Startup(IConfiguration configuration)
         if (string.IsNullOrWhiteSpace(secret) || Encoding.UTF8.GetByteCount(secret) < 32 || secret == "changethistosomethingrandomplease")
             throw new InvalidOperationException("Set jwt__secret to a random secret of at least 32 bytes.");
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
+            options.Events = new JwtBearerEvents {
+                OnTokenValidated = async context => {
+                    var ids = context.HttpContext.RequestServices.GetRequiredService<IDService>();
+                    var db = context.HttpContext.RequestServices.GetRequiredService<SVContext>();
+                    var id = ids.FromHash(context.Principal.FindFirst("uid")?.Value);
+                    if (!await db.Users.AnyAsync(u => u.Id == id)) context.Fail("Profile no longer exists.");
+                }
+            };
             options.TokenValidationParameters = new TokenValidationParameters {
                 ValidateIssuer = true, ValidateAudience = true, ValidateLifetime = true, ValidateIssuerSigningKey = true,
                 ValidIssuer = GuestAuthentication.Issuer, ValidAudience = GuestAuthentication.Issuer,
