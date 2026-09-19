@@ -96,13 +96,22 @@ public class EndToEndTests
             var favouriteList = await Json(await host.GetAsync("/api/lists/favourites"));
             var listId = Str(favouriteList, "id");
             Assert.Equal(HttpStatusCode.NotFound, (await guest.GetAsync($"/api/lists/{listId}")).StatusCode);
-            var hostSong = await Json(await host.PostAsJsonAsync("/api/songs/import", new { url = "https://youtu.be/dQw4w9WgXcQ" }));
+            var imports = await Task.WhenAll(
+                host.PostAsJsonAsync("/api/songs/import", new { url = "https://youtu.be/dQw4w9WgXcQ" }),
+                guest.PostAsJsonAsync("/api/songs/import", new { url = "https://youtu.be/dQw4w9WgXcQ" }));
+            Assert.All(imports, response => Assert.True(response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Conflict));
+            var hostSong = await Json(imports.First(response => response.IsSuccessStatusCode));
             var duplicate = await Json(await guest.PostAsJsonAsync("/api/songs/import", new { url = "https://youtube.com/watch?v=dQw4w9WgXcQ" }));
             Assert.Equal(Str(hostSong, "id"), Str(duplicate, "id"));
             var id = Str(hostSong, "id");
             Assert.Equal(HttpStatusCode.NotFound, (await guest.PostAsJsonAsync($"/api/lists/{listId}/songs", new { id })).StatusCode);
             await Json(await host.PostAsJsonAsync($"/api/lists/{listId}/songs", new { id }));
-            var party = await Json(await host.PostAsJsonAsync("/api/party", new { name = "Kitchen party", supportedPlatforms = new[] { "youtube" } }));
+            var creations = await Task.WhenAll(
+                host.PostAsJsonAsync("/api/party", new { name = "Kitchen party", supportedPlatforms = new[] { "youtube" } }),
+                host.PostAsJsonAsync("/api/party", new { name = "Kitchen party", supportedPlatforms = new[] { "youtube" } }));
+            Assert.Single(creations, response => response.IsSuccessStatusCode);
+            Assert.Single(creations, response => response.StatusCode == HttpStatusCode.Conflict);
+            var party = await Json(creations.Single(response => response.IsSuccessStatusCode));
             Assert.StartsWith("https://songvoter.party/join/", Str(party, "joinUrl"));
             Assert.Single(party["queue"].AsArray());
             Assert.Equal(3, party["queue"][0]["score"].GetValue<double>());
