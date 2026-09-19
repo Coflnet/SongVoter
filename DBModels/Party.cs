@@ -6,6 +6,8 @@ namespace Coflnet.SongVoter.DBModels
     public class Party
     {
         public int Id { get; set; }
+        public int? CurrentSongId { get; set; }
+        public int PlaybackVersion { get; set; }
         public User Creator { get; set; }
         public Platforms SupportedPlatforms { get; set; }
         [MaxLength(30)]

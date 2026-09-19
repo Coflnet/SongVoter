@@ -20,7 +20,7 @@ namespace Coflnet.SongVoter.Transformers
         {
             if (db == null)
                 return null;
-            System.Console.WriteLine($"lookup: {db.Lookup}");
+
             return new Models.Song()
             {
                 Id = iDService.ToHash(db.Id),
@@ -54,7 +54,7 @@ namespace Coflnet.SongVoter.Transformers
 
         public SongPlatform CombinePlatforms(SongPlatform[] platforms)
         {
-            if (platforms.Length == 0)
+            if (platforms == null || platforms.Length == 0)
                 return SongPlatform.Youtube | SongPlatform.Spotify;
             platforms = platforms ?? new SongPlatform[] { SongPlatform.Spotify, SongPlatform.Youtube };
             SongPlatform combinedPlatforms = platforms.Aggregate((a, b) => a | b);
@@ -67,7 +67,7 @@ namespace Coflnet.SongVoter.Transformers
             var result = new List<SongPlatform>();
             foreach (SongPlatform platform in Enum.GetValues(typeof(SongPlatform)))
             {
-                if (platforms.HasFlag(platform))
+                if (platform != 0 && platforms.HasFlag(platform))
                     result.Add(platform);
             }
             return result.ToArray();

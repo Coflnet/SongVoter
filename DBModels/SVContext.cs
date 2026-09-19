@@ -20,6 +20,8 @@ namespace Coflnet.SongVoter.DBModels
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<PartySong>().HasIndex(s => new { s.PartyId, s.SongId }).IsUnique();
+            modelBuilder.Entity<Invite>().HasIndex(i => i.Code).IsUnique();
             modelBuilder.Entity<User>().HasIndex(u => u.DeviceKeyHash).IsUnique();
             modelBuilder.Entity<AuthChallenge>().HasIndex(c => c.ExpiresAt);
             modelBuilder.Entity<PartySong>()

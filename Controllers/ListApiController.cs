@@ -1,228 +1,82 @@
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using Coflnet.SongVoter.Attributes;
 using Coflnet.SongVoter.DBModels;
-using Coflnet.SongVoter.Models;
 using Coflnet.SongVoter.Service;
+using Coflnet.SongVoter.Transformers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Swashbuckle.AspNetCore.Annotations;
 
-namespace Coflnet.SongVoter.Controllers
+namespace Coflnet.SongVoter.Controllers;
+
+[ApiController, Authorize, Route("api/lists")]
+public class ListApiController(SVContext db, IDService ids, PartyService parties, SongTransformer songs) : ControllerBase
 {
-    [Route("api/lists")]
-    public class ListApiControllerImpl : ControllerBase
+    private object View(Playlist list) => new { id = ids.ToHash(list.Id), list.Title,
+        ownerId = ids.ToHash(list.Owner), songs = list.Songs.Select(songs.ToApiSong) };
+
+    [HttpGet]
+    public async Task<IActionResult> Get()
     {
-        private SVContext db;
-        private IDService iDService;
-        private SpotifyService spotifyService;
-
-        public ListApiControllerImpl(SVContext db, IDService idService, SpotifyService spotifyService)
-        {
-            this.db = db;
-            iDService = idService;
-            this.spotifyService = spotifyService;
-        }
-
-        /// <summary>
-        /// Create a new playlist
-        /// </summary>
-        /// <param name="playList">An array of songIds to be added to the song</param>
-        /// <response code="200">successful created list</response>
-        [HttpPost]
-        [Route("")]
-        [Authorize]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("CreatePlaylist")]
-        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful created list")]
-        public async Task<IActionResult> CreatePlaylist([FromBody] PlayListCreate playList)
-        {
-            var userId = GetUserId();
-            var songIds = playList.Songs.Select(sid => iDService.FromHash(sid));
-            var playlist = new DBModels.Playlist()
-            {
-                Owner = (int)userId,
-                Title = playList.Title,
-                Songs = db.Songs.Where(s => songIds.Contains(s.Id)).ToList()
-            };
-            db.Add(playlist);
-            await db.SaveChangesAsync();
-            return Ok(DBToApiPlaylist(playlist));
-        }
-
-        /// <summary>
-        /// Adds a song to a playlist
-        /// </summary>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("{listId}/songs")]
-        [Authorize]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("AddSongToList")]
-        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
-        public async Task<IActionResult> AddSongToList([FromRoute(Name = "listId"), Required] string listId, [FromBody] SongId songId)
-        {
-            Playlist list = await GetPlayList(listId);
-            if (list == null)
-            {
-                return NotFound("list not found");
-            }
-            var song = await db.Songs.FindAsync((int)iDService.FromHash(songId.Id));
-            if (song == null)
-            {
-                return NotFound("song not found");
-            }
-            list.Songs.Add(song);
-            await db.SaveChangesAsync();
-            return Ok(DBToApiPlaylist(list));
-        }
-
-        private async Task<Playlist> GetPlayList(string listId)
-        {
-            var dbId = iDService.FromHash(listId);
-            var userId = GetUserId();
-            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
-            return list;
-        }
-
-        /// <summary>
-        /// Batch import playlist from spotify
-        /// </summary>
-        /// <param name="listId"></param>
-        /// <param name="ids"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("{listId}/songs/spotify")]
-        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
-        public async Task<IActionResult> AddSpotifySongsToList(string listId, [FromBody] List<string> ids)
-        {
-            Playlist list = await GetPlayList(listId);
-            if (list == null)
-            {
-                return NotFound("list not found");
-            }
-            var songs = await spotifyService.GetOrCreate(ids);
-            foreach (var song in songs)
-            {
-                if (list.Songs.Contains(song))
-                    continue;
-                list.Songs.Add(song);
-            }
-            await db.SaveChangesAsync();
-            return Ok(DBToApiPlaylist(list));
-        }
-
-        /// <summary>
-        /// Removes a song from a playlist
-        /// </summary>
-        /// <returns></returns>
-        /// <response code="200">successful operation</response>
-        /// <response code="404">list or song not found</response>
-        /// <response code="400">song not in list</response>
-        /// <response code="401">user not authorized</response>
-        [HttpDelete]
-        [Route("{listId}/songs/{songId}")]
-        [Authorize]
-        [ValidateModelState]
-        [SwaggerOperation("RemoveSongFromList")]
-        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        [SwaggerResponse(statusCode: 404, type: typeof(string), description: "song or playlist not found")]
-        [SwaggerResponse(statusCode: 400, type: typeof(string), description: "song not in list")]
-        public async Task<IActionResult> RemoveSongFromList([FromRoute(Name = "listId"), Required] string listId, [FromRoute(Name = "songId"), Required] string songId)
-        {
-            var dbId = iDService.FromHash(listId);
-            var userId = GetUserId();
-            var list = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId).Include(p => p.Songs).FirstOrDefaultAsync();
-            if (list == null)
-            {
-                return NotFound("list not found");
-            }
-            var song = await db.Songs.FindAsync(iDService.FromHash(songId));
-            if (song == null)
-            {
-                return NotFound("song not found");
-            }
-            if (!list.Songs.Contains(song))
-            {
-                return BadRequest("song not in list");
-            }
-            list.Songs.Remove(song);
-            await db.SaveChangesAsync();
-            return Ok(DBToApiPlaylist(list));
-        }
-
-        private long GetUserId()
-        {
-            return iDService.UserId(this);
-        }
-        /// <summary>
-        /// Find playlist by ID
-        /// </summary>
-        /// <remarks>Returns a playList</remarks>
-        /// <param name="listId">ID of list to return</param>
-        /// <response code="200">successful operation</response>
-        [HttpGet]
-        [Route("{listId}")]
-        [Authorize]
-        [ValidateModelState]
-        [SwaggerOperation("GetListById")]
-        [SwaggerResponse(statusCode: 200, type: typeof(PlayList), description: "successful operation")]
-        public async Task<IActionResult> GetListById([FromRoute(Name = "listId"), Required] string listId)
-        {
-            var dbId = iDService.FromHash(listId);
-            var userId = GetUserId();
-            var result = await db.PlayLists.Where(p => p.Id == dbId && p.Owner == userId)
-                .Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).FirstOrDefaultAsync();
-            return base.Ok(DBToApiPlaylist(result));
-        }
-
-
-
-        /// <summary>
-        /// Get playlist for active user
-        /// </summary>
-        /// <response code="200">successful response</response>
-        [HttpGet]
-        [Route("")]
-        [Authorize]
-        [ValidateModelState]
-        [SwaggerOperation("GetPlaylists")]
-        [SwaggerResponse(statusCode: 200, type: typeof(List<PlayList>), description: "successful response")]
-        public async Task<IActionResult> GetPlaylists()
-        {
-            var userId = GetUserId();
-            var result = await db.PlayLists.Where(p => p.Owner == userId)
-                .Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).ToListAsync();
-            return Ok(result.Select(p => DBToApiPlaylist(p)));
-        }
-
-        private PlayList DBToApiPlaylist(Playlist result)
-        {
-            return new Models.PlayList()
-            {
-                Id = iDService.ToHash(result.Id),
-                Songs = result.Songs?.Select(s => new Models.Song()
-                {
-                    Id = iDService.ToHash(s.Id),
-                    Title = s.Title,
-                    Occurences = s.ExternalSongs?.Select(o => new Models.ExternalSong()
-                    {
-                        Platform = (SongPlatform)o.Platform,
-                        ExternalId = o.ExternalId,
-                        Title = o.Title,
-                        Artist = o.Artist,
-                        Thumbnail = o.ThumbnailUrl
-                    }).ToList()
-                }).ToList(),
-                Title = result.Title
-            };
-        }
+        var lists = await db.PlayLists.Where(p => p.Owner == ids.UserId(this)).Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).ToListAsync();
+        return Ok(lists.Select(View));
     }
+
+    [HttpGet("favourites")]
+    public async Task<IActionResult> Favourites()
+    {
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        var list = await parties.Favourites(await db.Users.FindAsync(ids.UserId(this)));
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return Ok(View(list));
+    }
+
+    [HttpGet("{listId}")]
+    public async Task<IActionResult> Get(string listId)
+    {
+        var list = await Find(listId);
+        return list == null ? NotFound() : Ok(View(list));
+    }
+
+    [HttpPost("{listId}/songs")]
+    public async Task<IActionResult> Add(string listId, [FromBody, Required] Models.SongId songId)
+    {
+        using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+        var list = await Find(listId);
+        if (list == null) return NotFound();
+        var song = await db.Songs.Include(s => s.ExternalSongs).FirstOrDefaultAsync(s => s.Id == ids.FromHash(songId.Id));
+        if (song == null) return NotFound("Song not found.");
+        if (list.Songs.All(s => s.Id != song.Id)) {
+            if (list.Songs.Count >= PartyService.FavouriteLimit) return BadRequest("Choose up to 30 favourites. Remove one to make room.");
+            list.Songs.Add(song);
+        }
+        var user = await db.Users.FindAsync(ids.UserId(this));
+        var party = await parties.GetUserParty(user, true);
+        if (party != null) await parties.Add(party, user, [song.Id]);
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return Ok(View(list));
+    }
+
+    [HttpDelete("{listId}/songs/{songId}")]
+    public async Task<IActionResult> Remove(string listId, string songId)
+    {
+        var list = await Find(listId);
+        if (list == null) return NotFound();
+        var song = list.Songs.FirstOrDefault(s => s.Id == ids.FromHash(songId));
+        if (song != null) list.Songs.Remove(song);
+        var user = await db.Users.FindAsync(ids.UserId(this));
+        var party = await parties.GetUserParty(user, true);
+        if (party != null) {
+            var entry = (await parties.Songs(party)).FirstOrDefault(s => s.SongId == ids.FromHash(songId));
+            entry?.UpVoters.Remove(user);
+        }
+        await db.SaveChangesAsync();
+        return Ok(View(list));
+    }
+
+    private Task<Playlist> Find(string id) => db.PlayLists.Where(p => p.Owner == ids.UserId(this) && p.Id == ids.FromHash(id))
+        .Include(p => p.Songs).ThenInclude(s => s.ExternalSongs).FirstOrDefaultAsync();
 }

@@ -24,7 +24,7 @@ namespace Coflnet.SongVoter.DBModels
         /// <summary>
         /// How often this song has been played already
         /// </summary>
-        public short PlayedTimes { get; set; }
+        public int PlayedTimes { get; set; }
         public Song Song { get; set; }
         [ForeignKey("Song")]
         public int SongId { get; set; }

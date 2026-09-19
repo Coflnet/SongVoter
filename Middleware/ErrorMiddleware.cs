@@ -21,6 +21,16 @@ namespace Coflnet.SongVoter.Middleware
             {
                 await _next(context);
             }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pg && (pg.SqlState == "23505" || pg.SqlState == "40001"))
+            {
+                context.Response.StatusCode = 409;
+                await context.Response.WriteAsync("The queue changed. Please try again.");
+            }
+            catch (Npgsql.PostgresException ex) when (ex.SqlState == "40001")
+            {
+                context.Response.StatusCode = 409;
+                await context.Response.WriteAsync("The queue changed. Please try again.");
+            }
             catch (ApiException ex)
             {
                 context.Response.ContentType = "text/plain";

@@ -10,6 +10,8 @@ public class Invite
     /// The id of this invite
     /// </summary>
     public int Id { get; set; }
+    [System.ComponentModel.DataAnnotations.MaxLength(12)]
+    public string Code { get; set; }
     /// <summary>
     /// The party this invite is for
     /// </summary>
