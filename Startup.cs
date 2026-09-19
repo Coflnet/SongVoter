@@ -68,7 +68,9 @@ public class Startup(IConfiguration configuration)
         services.AddSingleton<IDService>();
         services.AddSingleton<SongTransformer>();
         services.AddSingleton<GuestAuthentication>();
-        services.AddTransient<SpotifyService>();
+        services.AddScoped<IMusicCatalog, YoutubeCatalog>();
+        services.AddScoped<IMusicCatalog, SpotifyCatalog>();
+        services.AddScoped<SongCatalog>();
         services.AddScoped<PartyService>();
         services.AddHealthChecks().AddCheck<DbHealthCheck>("database");
     }
