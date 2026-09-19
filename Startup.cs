@@ -70,6 +70,7 @@ public class Startup(IConfiguration configuration)
         });
         services.Configure<ForwardedHeadersOptions>(options => {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.ForwardLimit = 2; // Ingress, then the website's same-origin proxy.
             foreach (var network in configuration.GetSection("TrustedProxyNetworks").Get<string[]>() ?? [])
                 options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
         });
