@@ -1,381 +1,79 @@
-using System;
-using Microsoft.AspNetCore.Mvc;
-using Coflnet.SongVoter.Models;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.AspNetCore.Identity;
-using Coflnet.SongVoter.DBModels;
-using Google.Apis.Auth;
-using Coflnet.SongVoter.Middleware;
 using System.Linq;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Coflnet.SongVoter.DBModels;
 using Coflnet.SongVoter.Service;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Swashbuckle.AspNetCore.Annotations;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Newtonsoft.Json;
-using Coflnet.SongVoter.Attributes;
-using SpotifyAPI.Web.Auth;
-using SpotifyAPI.Web;
-using Google.Apis.Auth.OAuth2;
-using Google.Apis.Auth.OAuth2.Flows;
-using Google.Apis.Services;
-using Microsoft.Extensions.Logging;
-using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Auth;
 
-namespace Coflnet.SongVoter.Controllers
+namespace Coflnet.SongVoter.Controllers;
+
+[ApiController, Route("api/auth")]
+public class AuthApiController(SVContext db, GuestAuthentication auth, IDService ids, IConfiguration config) : ControllerBase
 {
-    [Route("api/auth")]
-    public class AuthApiControllerImpl : ControllerBase
+    public record ChallengeRequest([Required, RegularExpression("^[a-f0-9]{64}$")] string IdentityHash);
+    public record ProofRequest([Required, StringLength(64, MinimumLength = 64)] string ChallengeId,
+        [Required, RegularExpression("^[a-f0-9]{64}$")] string Secret, [Range(0, long.MaxValue)] long Counter);
+
+    [HttpPost("challenge"), AllowAnonymous, EnableRateLimiting("authentication")]
+    public async Task<IActionResult> Challenge(ChallengeRequest request)
     {
-        private readonly SVContext db;
-        private readonly IConfiguration config;
-        private readonly IDService idService;
-        private readonly ILogger<AuthApiControllerImpl> logger;
-        public AuthApiControllerImpl(SVContext data, IConfiguration config, IDService idService, ILogger<AuthApiControllerImpl> logger)
+        await db.AuthChallenges.Where(c => c.ExpiresAt <= DateTime.UtcNow).ExecuteDeleteAsync();
+        var challenge = new AuthChallenge {
+            Id = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32)), IdentityHash = request.IdentityHash,
+            Difficulty = Math.Clamp(config.GetValue("Authentication:Difficulty", 20), 16, 24),
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+        };
+        db.Add(challenge);
+        await db.SaveChangesAsync();
+        return Ok(new { challenge.Id, challenge.Difficulty, challenge.ExpiresAt });
+    }
+
+    [HttpPost("anonymous"), AllowAnonymous, EnableRateLimiting("authentication")]
+    public async Task<IActionResult> Anonymous(ProofRequest request)
+    {
+        var challenge = await db.AuthChallenges.FindAsync(request.ChallengeId);
+        if (challenge == null || !GuestAuthentication.Verify(challenge, request.Secret, request.Counter, DateTime.UtcNow))
+            return Unauthorized("Please retry connecting to the party.");
+        // Database consumption makes a proof single-use across replicas and restarts.
+        using var transaction = await db.Database.BeginTransactionAsync();
+        if (await db.AuthChallenges.Where(c => c.Id == challenge.Id && c.ExpiresAt > DateTime.UtcNow).ExecuteDeleteAsync() != 1)
+            return Unauthorized("This challenge has already been used.");
+        var user = await db.Users.SingleOrDefaultAsync(u => u.DeviceKeyHash == challenge.IdentityHash);
+        if (user == null)
         {
-            this.db = data;
-            this.config = config;
-            this.idService = idService;
-            this.logger = logger;
+            user = new User { DeviceKeyHash = challenge.IdentityHash, Name = "Guest" };
+            db.Users.Add(user);
         }
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        Response.Headers.CacheControl = "no-store";
+        return Ok(auth.Session(user));
+    }
 
-        /// <summary>
-        /// Authenticate with google
-        /// </summary>
-        /// <remarks>Exchange a google identity token for a songvoter token</remarks>
-        /// <param name="authToken">The google identity token</param>
-        /// <response code="200">successful operation</response>
-       /* [HttpPost]
-        [Route("google")]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("AuthWithGoogle")]
-        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithGoogle([FromBody] AuthToken authToken)
-        {
-            var data = ValidateToken(authToken.Token);
-            return await GetTokenForUser(data);
-        }*/
-
-
-        public class AuthCode
-        {
-            public string Code { get; set; }
-            public string RedirectUri { get; set; }
-        }
-
-        /// <summary>
-        /// Stores google auth token server side
-        /// </summary>
-        /// <param name="refreshToken">The google refresh token</param>
-        /// <response code="200">successful operation</response>
-        [HttpPost]
-        [Route("google")]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("AuthWithGoogleToken")]
-        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<AuthToken> AuthWithGoogleToken([FromBody] AuthRefreshToken refreshToken)
-        {
-            // store refresh token
-            var data = await ValidateToken(refreshToken.Token);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    Google.Apis.YouTube.v3.YouTubeService yt = new Google.Apis.YouTube.v3.YouTubeService(
-                        new BaseClientService.Initializer()
-                        {
-                            ApiKey = refreshToken.AccessToken
-                        });
-
-                    var request = yt.Search.List("snippet");
-                    request.Q = "pokerface";
-                    request.MaxResults = 20;
-                    request.Type = "video";
-
-                    var response = await request.ExecuteAsync();
-                    Console.WriteLine(JsonConvert.SerializeObject(response));
-                }
-                catch (System.Exception)
-                {
-                    Console.WriteLine("Failed to get youtube data with login token");
-                }
-            });
-            return await GetTokenForUser(data, refreshToken.RefreshToken, refreshToken.AccessToken);
-        }
-
-        /// <summary>
-        /// Authcode oauth2 flow for google
-        /// </summary>
-        /// <param name="authCode"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("google/code")]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("AuthWithGoogle")]
-        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithGoogle([FromBody] AuthCode authCode)
-        {
-            try
-            {
-                Console.WriteLine("Auth with google code " + authCode.Code + " redirect " + authCode.RedirectUri);
-                var secrets = new ClientSecrets
-                {
-                    ClientId = config["google:clientid"],
-                    ClientSecret = config["google:clientsecret"]
-                };
-                Console.WriteLine("Got google secrets " + secrets.ClientId + " " + secrets.ClientSecret?.Substring(0, 5) + "...");
-                var token = await new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
-                {
-                    ClientSecrets = secrets
-                }).ExchangeCodeForTokenAsync("2", authCode.Code, authCode.RedirectUri, System.Threading.CancellationToken.None);
-                Console.WriteLine("Got google token " + JsonConvert.SerializeObject(token));
-                // get user info with token
-                var data = await ValidateToken(token.IdToken);
-                return Ok(await GetTokenForUser(data, token.RefreshToken, token.AccessToken));
-            }
-            catch (TokenResponseException e)
-            {
-                logger.LogError(e, "Failed to get google token");
-                return BadRequest(e.Error);
-            }
-        }
-
-        [HttpPost]
-        [Route("spotify/code")]
-        [Consumes("application/json")]
-        [ValidateModelState]
-        [SwaggerOperation("AuthWithSpotify")]
-        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithSpotify([FromBody] AuthCode authCode)
-        {
-            try
-            {
-                var uri = new Uri(authCode.RedirectUri ?? "com.coflnet.songvoter://account");
-                Console.WriteLine("Auth with spotify code " + authCode.Code + " redirect " + uri);
-                var token = await new OAuthClient().RequestToken(new AuthorizationCodeTokenRequest(
-                                config["spotify:clientid"],
-                                config["spotify:clientsecret"],
-                                authCode.Code,
-                                uri
-                            ));
-                logger.LogInformation($"Got spotify token {token.AccessToken} {token.RefreshToken} {token.ExpiresIn}");
-                var spotify = new SpotifyClient(token.AccessToken);
-                var me = await spotify.UserProfile.Current();
-                var userId = idService.UserId(this);
-                if (userId <= 0)
-                    userId = db.Users
-                        .Where(u => u.Tokens.Where(t => t.ExternalId == me.Id && t.Platform == Platforms.Spotify).Any())
-                        .Select(u => u.Id).FirstOrDefault();
-                if (userId <= 0)
-                {
-                    var newUser = new User()
-                    {
-                        Name = me.DisplayName
-                    };
-                    db.Add(newUser);
-                    await db.SaveChangesAsync();
-                    userId = newUser.Id;
-                }
-                var user = await db.Users.Where(u => u.Id == userId).Include(u => u.Tokens.Where(t => t.Platform == Platforms.Spotify)).FirstOrDefaultAsync();
-                var spotifyToken = user.Tokens.FirstOrDefault(t => t.Platform == Platforms.Spotify);
-                if (spotifyToken == null)
-                {
-                    spotifyToken = new Oauth2Token()
-                    {
-                        ExternalId = me.Id,
-                        Platform = Platforms.Spotify,
-                        // add refresh token
-                        AccessToken = token.AccessToken,
-                        RefreshToken = token.RefreshToken,
-                        Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn),
-                        AuthCode = authCode.Code,
-                    };
-                    user.Tokens.Add(spotifyToken);
-                }
-                spotifyToken.AccessToken = token.AccessToken;
-                logger.LogInformation($"Refresh token {token.RefreshToken} for {me.DisplayName}");
-                spotifyToken.RefreshToken = token.RefreshToken;
-                spotifyToken.Expiration = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
-                spotifyToken.AuthCode = authCode.Code;
-                db.Update(user);
-                await db.SaveChangesAsync();
-
-                return Ok(new { token = CreateTokenFor(userId) });
-            }
-            catch (SpotifyAPI.Web.APIException e)
-            {
-                Console.WriteLine(JsonConvert.SerializeObject(e.Response));
-                return this.Problem(e.Message);
-            }
-        }
-
-        private async Task<AuthToken> GetTokenForUser(GoogleJsonWebSignature.Payload data, string refreshToken = null, string accessToken = null)
-        {
-            var userId = db.Users.Where(u => u.GoogleId == data.Subject).Select(u => u.Id).FirstOrDefault();
-            var token = new Oauth2Token()
-            {
-                ExternalId = data.Subject,
-                Platform = Platforms.Youtube,
-                // add refresh token
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                Expiration = DateTime.UtcNow.AddSeconds(data.ExpirationTimeSeconds.Value)
-            };
-            if (userId == 0)
-            {
-                var user = new User()
-                {
-                    GoogleId = data.Subject,
-                    Name = data.Name,
-                    Tokens = new List<Oauth2Token>() { 
-                        token
-                     }
-                };
-                db.Add(user);
-                await db.SaveChangesAsync();
-                userId = user.Id;
-            }
-
-            return new AuthToken() { Token = CreateTokenFor(userId) };
-        }
-
-        /// <summary>
-        /// Sign in with anonymous user
-        /// </summary>
-        /// <param name="nonce">client choosen identifier</param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("anonymous")]
-        [SwaggerOperation("AuthWithAnonymous")]
-        [SwaggerResponse(statusCode: 200, type: typeof(AuthToken), description: "successful operation")]
-        public async Task<IActionResult> AuthWithAnonymous(string nonce)
-        {
-            var prefixed = "anonymous:" + nonce;
-            var existing = db.Users.Where(u => u.GoogleId == prefixed).FirstOrDefault();
-            if (existing != null)
-            {
-                return Ok(new AuthToken() { Token = CreateTokenFor(existing.Id) });
-            }
-            var user = new User()
-            {
-                GoogleId = prefixed,
-                Name = "Anonymous"
-            };
-            db.Add(user);
-            await db.SaveChangesAsync();
-            logger.LogInformation($"Created anonymous user {user.Id}");
-            return Ok(new AuthToken() { Token = CreateTokenFor(user.Id) });
-        }
-
-
-        [HttpPost]
-        [Route("test")]
-        [Consumes("application/json")]
-        public async Task<IActionResult> AuthWithTestToken([FromBody] AuthToken token)
-        {
-            AuthToken internalToken = await GetTokenForTestUser();
-            var savedToken = config["test:authtoken"];
-            Console.WriteLine($"Token for test user {internalToken?.Token}");
-            if (string.IsNullOrEmpty(savedToken))
-                return this.Problem("test mode not active, please set test:authtoken");
-
-            if (savedToken != token.Token)
-                return this.Problem("invalid token passed");
-
-            return Ok(internalToken);
-        }
-
-        private async Task<AuthToken> GetTokenForTestUser()
-        {
-            var payload = new GoogleJsonWebSignature.Payload()
-            {
-                Subject = "2",
-                Name = "testUser"
-            };
-            var internalToken = await GetTokenForUser(payload);
-            return internalToken;
-        }
-
-        [HttpDelete]
-        [Route("/db")]
-        [Consumes("application/json")]
-        public async Task<IActionResult> Drop([FromBody] AuthToken token)
-        {
-            var savedToken = config["db:authtoken"];
-            Console.WriteLine("Attempt to drop db");
-            if (string.IsNullOrEmpty(savedToken))
-                return this.Problem("please set db:authtoken");
-
-            if (savedToken != token.Token)
-                return this.Problem("invalid token passed");
-
-            db.Database.EnsureDeleted();
-
-            return Ok("dropped I hope you are not evil");
-        }
-
-        [HttpPost]
-        [Route("/db")]
-        [Consumes("application/json")]
-        public async Task<IActionResult> MigrateDb([FromBody] AuthToken token)
-        {
-            var savedToken = config["db:authtoken"];
-            if (string.IsNullOrEmpty(savedToken))
-                return this.Problem("please set db:authtoken");
-
-            if (savedToken != token.Token)
-                return this.Problem("invalid token passed");
-
-            await db.Database.MigrateAsync();
-
-            return Ok("migrated");
-        }
-
-        private string CreateTokenFor(int userId)
-        {
-            string key = config["jwt:secret"]; //Secret key which will be used later during validation    
-            var issuer = "http://mysite.com"; //normally this will be your site URL    
-
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            //Create a List of Claims, Keep claims name short    
-            var permClaims = new List<Claim>();
-            permClaims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-            // userLevel
-            permClaims.Add(new Claim("ul", "1"));
-            permClaims.Add(new Claim("uid", idService.ToHash(userId)));
-
-            //Create Security Token object by giving required parameters    
-            var token = new JwtSecurityToken(issuer, //Issure    
-                issuer, //Audience    
-                permClaims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: credentials);
-            var jwt_token = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt_token;
-        }
-
-        public static async Task<GoogleJsonWebSignature.Payload> ValidateToken(string token)
-        {
-            try
-            {
-                var tokenData = await GoogleJsonWebSignature.ValidateAsync(token);
-                Console.WriteLine("google user: " + tokenData.Name);
-                return tokenData;
-            }
-            catch (Exception e)
-            {
-                throw new ApiException(System.Net.HttpStatusCode.InternalServerError, $"{e.InnerException.Message}");
-            }
-        }
+    // Optional account upgrade keeps the same profile, favourites, and event ownership.
+    [HttpPost("google"), Authorize]
+    public async Task<IActionResult> Google(Models.AuthToken request)
+    {
+        if (string.IsNullOrWhiteSpace(config["google:clientid"]))
+            return StatusCode(503, "Google account linking is not configured.");
+        GoogleJsonWebSignature.Payload payload;
+        try {
+            payload = await GoogleJsonWebSignature.ValidateAsync(request.Token,
+                new GoogleJsonWebSignature.ValidationSettings { Audience = [config["google:clientid"]] });
+        } catch (InvalidJwtException) { return Unauthorized("Invalid Google identity token."); }
+        var user = await db.Users.FindAsync(ids.UserId(this));
+        if (await db.Users.AnyAsync(u => u.GoogleId == payload.Subject && u.Id != user.Id))
+            return Conflict("This Google account is already linked to another profile.");
+        user.GoogleId = payload.Subject;
+        user.Name = payload.Name ?? user.Name;
+        await db.SaveChangesAsync();
+        return Ok(auth.Session(user));
     }
 }

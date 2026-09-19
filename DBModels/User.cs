@@ -7,6 +7,10 @@ public class User
 {
     public int Id { get; set; }
     public string Name { get; set; }
+    [System.ComponentModel.DataAnnotations.MaxLength(64)]
+    public string DeviceKeyHash { get; set; }
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool IsAnonymous => string.IsNullOrEmpty(GoogleId) || GoogleId.StartsWith("anonymous:");
     /// <summary>
     /// 
     /// </summary>

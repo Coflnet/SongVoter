@@ -8,6 +8,7 @@ namespace Coflnet.SongVoter.DBModels
         {
         }
 
+        public DbSet<AuthChallenge> AuthChallenges { get; set; }
         public DbSet<Song> Songs { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Playlist> PlayLists { get; set; }
@@ -19,6 +20,8 @@ namespace Coflnet.SongVoter.DBModels
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<User>().HasIndex(u => u.DeviceKeyHash).IsUnique();
+            modelBuilder.Entity<AuthChallenge>().HasIndex(c => c.ExpiresAt);
             modelBuilder.Entity<PartySong>()
                 .HasMany(s => s.DownVoters)
                 .WithMany(p => p.Downvotes);

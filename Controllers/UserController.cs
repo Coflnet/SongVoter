@@ -78,7 +78,6 @@ public class UserController : ControllerBase
             logger.LogInformation($"No spotify token found for user {user?.Id}");
             return null;
         }
-        logger.LogInformation("Spotify token expires at {0} refresh token starts with {1}", token.Expiration, token.RefreshToken?.Substring(0, 5));
         // refresh token if needed
         if (token.Expiration < DateTime.UtcNow + TimeSpan.FromMinutes(5) && token.AccessToken != null)
         {
@@ -99,7 +98,6 @@ public class UserController : ControllerBase
             token.AccessToken = newToken.AccessToken;
             token.Expiration = DateTime.UtcNow.AddSeconds(newToken.ExpiresIn);
             token.RefreshToken = newToken.RefreshToken ?? token.RefreshToken;
-            logger.LogInformation($"New token info: {token.AccessToken} expires at {token.Expiration} refresh token starts with {token.RefreshToken?.Substring(0, 5)}");
             db.Update(token);
             await db.SaveChangesAsync();
         }

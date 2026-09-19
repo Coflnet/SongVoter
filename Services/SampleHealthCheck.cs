@@ -17,8 +17,8 @@ public class DbHealthCheck : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var user = await db.Users.FirstOrDefaultAsync();
-        var isHealthy = user != null;
+        await db.Users.AnyAsync(cancellationToken);
+        var isHealthy = true;
 
         if (isHealthy)
         {
