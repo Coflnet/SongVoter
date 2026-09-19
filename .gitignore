@@ -367,3 +367,5 @@ mariadb_data/
 **/node_modules
 tests/cypress/videos/
 tests/cypress/screenshots
+tests/browser/test-results/
+tests/browser/playwright-report/
