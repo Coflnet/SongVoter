@@ -57,6 +57,9 @@ public class Startup(IConfiguration configuration)
         services.AddAuthorization(options => options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
         services.AddRateLimiter(options => {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("imports", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.User.FindFirst("uid")?.Value ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 12, Window = TimeSpan.FromMinutes(10) }));
             options.AddPolicy("authentication", context => RateLimitPartition.GetFixedWindowLimiter(
                 context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                 // A venue's guests can share one public IP; joining takes two requests.
@@ -84,6 +87,9 @@ public class Startup(IConfiguration configuration)
         services.AddScoped<IMusicCatalog, YoutubeCatalog>();
         services.AddScoped<IMusicCatalog, SpotifyCatalog>();
         services.AddScoped<SongCatalog>();
+        services.AddScoped<MusicImport>();
+        services.AddHttpClient("music-import", client => client.Timeout = TimeSpan.FromSeconds(15))
+            .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<PartyService>();
         services.AddHealthChecks().AddCheck<DbHealthCheck>("database");
     }

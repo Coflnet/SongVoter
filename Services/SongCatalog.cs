@@ -71,7 +71,7 @@ public class SongCatalog(SVContext db, IEnumerable<IMusicCatalog> providers, ILo
     private Task<Song> Find(Platforms platform, string id) => db.Songs.Include(s => s.ExternalSongs)
         .FirstOrDefaultAsync(s => s.ExternalSongs.Any(e => e.Platform == platform && e.ExternalId == id));
 
-    private async Task<Song> Store(ExternalSong external)
+    public async Task<Song> Store(ExternalSong external)
     {
         using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         // The predicate read and insertion commit together, including concurrent imports.

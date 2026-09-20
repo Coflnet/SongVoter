@@ -29,31 +29,34 @@ public class EndToEndTests
         });
     }
 
-    private sealed class App(string connection) : WebApplicationFactory<Program>
+    internal sealed class App(string connection, HttpMessageHandler importHandler = null) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string> {
                 ["DB_CONNECTION"] = connection, ["jwt:secret"] = "songvoter-integration-tests-only-32-byte-secret",
-                ["hashids:salt"] = "songvoter-tests", ["Authentication:Difficulty"] = "16"
+                ["hashids:salt"] = "songvoter-tests", ["Authentication:Difficulty"] = "16",
+                ["google:clientid"] = "test-google", ["google:clientsecret"] = "test-only",
+                ["spotify:clientid"] = "test-spotify", ["spotify:clientsecret"] = "test-only"
             }));
             builder.ConfigureServices(services => {
                 services.RemoveAll<IMusicCatalog>();
                 services.AddSingleton<IMusicCatalog>(new Catalog(Platforms.Youtube));
                 services.AddSingleton<IMusicCatalog>(new Catalog(Platforms.Spotify));
+                if (importHandler != null) services.AddHttpClient("music-import").ConfigurePrimaryHttpMessageHandler(() => importHandler);
             });
         }
     }
 
-    private static async Task<JsonObject> Json(HttpResponseMessage response)
+    internal static async Task<JsonObject> Json(HttpResponseMessage response)
     {
         var body = await response.Content.ReadAsStringAsync();
         Assert.True(response.IsSuccessStatusCode, $"{response.StatusCode}: {body}");
         return JsonNode.Parse(body).AsObject();
     }
-    private static string Str(JsonObject value, string key) => value[key].GetValue<string>();
+    internal static string Str(JsonObject value, string key) => value[key].GetValue<string>();
 
-    private static async Task<(JsonObject Session, object Proof)> Login(HttpClient client, string secret = null)
+    internal static async Task<(JsonObject Session, object Proof)> Login(HttpClient client, string secret = null)
     {
         secret ??= Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(32));
         var challenge = await Json(await client.PostAsJsonAsync("/api/auth/challenge", new { identityHash = GuestAuthentication.IdentityHash(secret) }));
