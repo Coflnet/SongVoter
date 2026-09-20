@@ -34,6 +34,7 @@ try:
     run('dotnet', 'build', '--no-incremental', cwd=root)
     if os.environ.get('SKIP_WEB_BUILD') != '1':
         run(os.environ.get('FLUTTER_BIN', 'flutter'), 'build', 'web', '--release', cwd=client)
+        run('sh', str(client / 'tool/fingerprint-web.sh'), cwd=client)
     run('npm', 'ci', cwd=Path(__file__).parent)
     run('docker', 'run', '-d', '--name', container, '-p', '127.0.0.1::5432',
         '-e', 'POSTGRES_USER=songvoter', '-e', 'POSTGRES_PASSWORD=songvoter',
