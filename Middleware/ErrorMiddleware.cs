@@ -26,7 +26,8 @@ namespace Coflnet.SongVoter.Middleware
                 context.Response.StatusCode = 409;
                 await context.Response.WriteAsync("The queue changed. Please try again.");
             }
-            catch (Npgsql.PostgresException ex) when (ex.SqlState == "40001")
+            catch (System.Exception ex) when (ex is Npgsql.PostgresException { SqlState: "40001" }
+                or System.InvalidOperationException { InnerException: Npgsql.PostgresException { SqlState: "40001" } })
             {
                 context.Response.StatusCode = 409;
                 await context.Response.WriteAsync("The queue changed. Please try again.");
@@ -53,4 +54,3 @@ namespace Coflnet.SongVoter.Middleware
         }
     }
 }
-
