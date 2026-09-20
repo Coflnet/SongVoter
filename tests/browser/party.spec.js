@@ -154,3 +154,41 @@ for (const provider of ['youtube', 'spotify']) {
     }
   });
 }
+
+test('live YouTube playlist imports after QR join and persists without searching', async ({page}) => {
+  test.skip(!process.env.E2E_PLAYLIST_URL, 'Set E2E_PLAYLIST_URL to verify the real YouTube catalogue.');
+  const host = await hostSession();
+  let guestToken;
+  try {
+    page.on('response', async response => {
+      if (response.url().endsWith('/api/auth/anonymous') && response.ok()) guestToken = (await response.json()).token;
+    });
+    const party = await (await host.post('/api/party',{data:{name:'Live playlist import',supportedPlatforms:['youtube']}})).json();
+    await page.goto(`/join/${party.code}?lang=de`);
+    await semantics(page);
+    await page.getByRole('button',{name:'YouTube-Playlistlink verwenden',exact:true}).click({timeout:45000});
+    await page.getByRole('textbox',{name:'Playlistlink',exact:true}).fill(process.env.E2E_PLAYLIST_URL);
+    const imported = page.waitForResponse(response => response.url().endsWith('/api/import/youtube') && response.request().method() === 'POST');
+    await page.getByRole('button',{name:'Playlist importieren',exact:true}).click();
+    const result = await imported;
+    expect(result.ok(), await result.text()).toBeTruthy();
+    const data = await result.json();
+    expect(data.added).toBeGreaterThan(1);
+    expect(data.total).toBeLessThanOrEqual(30);
+    await expect(page.getByRole('button',{name:'Meine Favoriten nutzen',exact:true})).toBeVisible();
+    let queue = await (await host.get('/api/party')).json();
+    expect(queue.queue).toHaveLength(data.total);
+    expect(queue.members).toBe(2);
+    expect(queue.queue.reduce((sum,song) => sum + song.score,0)).toBeLessThan(1.02);
+    await page.reload();
+    await semantics(page);
+    await page.getByRole('button',{name:'Meine Favoriten nutzen',exact:true}).click({timeout:45000});
+    queue = await (await host.get('/api/party')).json();
+    expect(queue.queue).toHaveLength(data.total);
+    await page.screenshot({path:'test-results/live-german-playlist-import.png'});
+  } finally {
+    if (guestToken) await host.delete('/api/user',{headers:{Authorization:`Bearer ${guestToken}`}});
+    await host.delete('/api/user');
+    await host.dispose();
+  }
+});

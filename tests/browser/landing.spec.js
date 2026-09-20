@@ -50,6 +50,10 @@ test('German browser gets localized landing and app, with a language switch', as
     await expect(page.getByRole('button', {name:'YouTube',exact:true})).toBeVisible();
     await expect(page.getByRole('button', {name:'Spotify',exact:true})).toBeVisible();
     await page.screenshot({path:'test-results/german-app.png'});
+    await page.getByRole('button', {name:'YouTube-Playlistlink verwenden',exact:true}).click();
+    await page.getByRole('textbox', {name:'Playlistlink',exact:true}).fill('https://unrelated.example/playlist');
+    await page.getByRole('button', {name:'Playlist importieren',exact:true}).click();
+    await expect(page.getByText('Wähle eine Playlist oder füge ihren vollständigen Link ein.',{exact:true})).toBeVisible();
   } finally { await context.close(); }
 });
 
