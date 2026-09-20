@@ -141,6 +141,13 @@ for (const provider of ['youtube', 'spotify']) {
       expect(queue.queue).toHaveLength(1);
       expect(queue.queue[0].score).toBe(1);
       await page.getByRole('button',{name:'Use my favourites',exact:true}).click();
+      expect(await page.evaluate(() => {
+        // Chrome's scrollIntoView must not shift Flutter's fixed canvas away from its semantic buttons.
+        document.body.scrollLeft = 44;
+        document.body.scrollTop = 44;
+        return {x:document.body.scrollLeft,y:document.body.scrollTop};
+      })).toEqual({x:0,y:0});
+      await page.screenshot({path:`test-results/${provider}-import-actions.png`});
       queue = await (await host.get('/api/party')).json();
       expect(queue.queue).toHaveLength(1);
       await page.reload();
