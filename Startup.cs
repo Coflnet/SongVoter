@@ -89,6 +89,7 @@ public class Startup(IConfiguration configuration)
         services.AddScoped<SongCatalog>();
         services.AddScoped<MusicImport>();
         services.AddHttpClient("music-import", client => client.Timeout = TimeSpan.FromSeconds(15))
+            .RemoveAllLoggers() // Provider request URLs may contain the YouTube API key.
             .ConfigurePrimaryHttpMessageHandler(() => new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<PartyService>();
         services.AddHealthChecks().AddCheck<DbHealthCheck>("database");
