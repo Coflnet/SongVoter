@@ -21,10 +21,21 @@ async function semantics(page) {
 
 test('QR invite → silent guest → find song → vote → host plays → reload retains favourites', async ({ page }) => {
   const host = await hostSession();
-  const response = await host.post('/api/party', {data:{name:'Friday kitchen party', supportedPlatforms:['youtube','spotify']}});
-  expect(response.ok()).toBeTruthy();
-  const party = await response.json();
+  let guestToken;
   try {
+    const term = process.env.E2E_SONG_URL || 'Midnight City';
+    let title = 'Midnight City';
+    if (process.env.E2E_SONG_URL) {
+      const imported = await host.post('/api/songs/import', {data:{url:term}});
+      expect(imported.ok()).toBeTruthy();
+      title = (await imported.json()).title;
+    }
+    page.on('response', async response => {
+      if (response.url().endsWith('/api/auth/anonymous') && response.ok()) guestToken = (await response.json()).token;
+    });
+    const response = await host.post('/api/party', {data:{name:'Friday kitchen party', supportedPlatforms:['youtube','spotify']}});
+    expect(response.ok()).toBeTruthy();
+    const party = await response.json();
     expect(party.joinUrl).toBe(`https://songvoter.party/join/${party.code}`);
     await page.goto(`/join/${party.code}`);
     await semantics(page);
@@ -33,13 +44,13 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await expect(page.getByRole('button', {name:'Start the music'})).toHaveCount(0);
     const search = page.getByRole('textbox', {name:'Find a song or paste a link'});
     await search.click();
-    await search.pressSequentially('Midnight City');
-    await expect(search).toHaveValue('Midnight City');
+    await search.pressSequentially(term);
+    await expect(search).toHaveValue(term);
     await page.getByRole('button', {name:'Search songs', exact:true}).click();
-    const add = page.getByRole('button', {name:'Add Midnight City to favourites', exact:true});
+    const add = page.getByRole('button', {name:`Add ${title} to favourites`, exact:true});
     await expect(add).toBeVisible();
     await add.click();
-    await expect(page.getByRole('button', {name:'Remove Midnight City from favourites'}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name:`Remove ${title} from favourites`}).first()).toBeVisible();
     let queue = await (await host.get('/api/party')).json();
     expect(queue.queue).toHaveLength(1);
     expect(queue.queue[0].score).toBe(1);
@@ -52,7 +63,7 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await semantics(page);
     await expect(page.getByText(/NOW PLAYING/)).toBeVisible({timeout:15000});
     await page.getByRole('button', {name:'Your favourites',exact:true}).click();
-    await expect(page.getByRole('button', {name:'Remove Midnight City from favourites'})).toBeVisible();
+    await expect(page.getByRole('button', {name:`Remove ${title} from favourites`})).toBeVisible();
     queue = await (await host.get('/api/party')).json();
     expect(queue.members).toBe(2);
     // Desktop and landscape remain usable with the same persisted identity.
@@ -63,6 +74,8 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await expect(page.getByRole('button',{name:'Join',exact:true})).toBeVisible();
   } finally {
     await host.post('/api/party/leave');
+    if (guestToken) await host.delete('/api/user', {headers:{Authorization:`Bearer ${guestToken}`}});
+    await host.delete('/api/user');
     await host.dispose();
   }
 });

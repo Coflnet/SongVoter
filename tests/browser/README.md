@@ -24,3 +24,9 @@ Metadata is seeded for two songs; provider credentials are deliberately empty.
 This verifies the application flow without consuming provider quotas and does
 not claim audible Spotify/YouTube playback. Backend tests separately cover both
 imports; Flutter tests cover provider switching and SDK end-event coordination.
+
+For the deployed service, run the same suite from this directory with
+`API_URL=https://songvoter.party WEB_URL=https://songvoter.party E2E_SONG_URL=https://youtu.be/dX3k_QDnzHE npx playwright test`.
+This imports the real catalog track instead of requiring a seeded title. It
+creates its own private party and deletes its host/guest test profiles after
+checking persistence. It never joins or controls another user's party.
