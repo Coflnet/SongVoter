@@ -141,7 +141,10 @@ for (const provider of ['youtube', 'spotify']) {
       expect(queue.members).toBe(2);
       expect(queue.queue).toHaveLength(1);
       expect(queue.queue[0].score).toBe(1);
+      const reused = page.waitForResponse(response => response.url().endsWith('/api/party/add') && response.request().method() === 'POST');
       await page.getByRole('button',{name:'Use my favourites',exact:true}).click();
+      expect((await reused).ok()).toBeTruthy();
+      await expect(page.getByRole('button',{name:'Use my favourites',exact:true})).toBeEnabled();
       expect(await page.evaluate(() => {
         // Chrome's scrollIntoView must not shift Flutter's fixed canvas away from its semantic buttons.
         document.body.scrollLeft = 44;
@@ -190,7 +193,10 @@ test('live YouTube playlist imports after QR join and persists without searching
     expect(queue.queue.reduce((sum,song) => sum + song.score,0)).toBeLessThan(1.02);
     await page.reload();
     await semantics(page);
+    const reused = page.waitForResponse(response => response.url().endsWith('/api/party/add') && response.request().method() === 'POST');
     await page.getByRole('button',{name:'Meine Favoriten nutzen',exact:true}).click({timeout:45000});
+    expect((await reused).ok()).toBeTruthy();
+    await expect(page.getByRole('button',{name:'Meine Favoriten nutzen',exact:true})).toBeEnabled();
     queue = await (await host.get('/api/party')).json();
     expect(queue.queue).toHaveLength(data.total);
     await page.screenshot({path:'test-results/live-german-playlist-import.png'});
