@@ -16,7 +16,8 @@ namespace Coflnet.SongVoter.Controllers;
 public class ImportController(SVContext db, IDService ids, MusicImport music, SongCatalog catalog, PartyService parties) : ControllerBase
 {
     public record ConnectRequest([Required, RegularExpression("^[a-f0-9]{64}$")] string Proof, bool Native, [RegularExpression("^(de|en)$")] string Language = "en");
-    public record CompleteRequest([Required, StringLength(100)] string State, [Required, RegularExpression("^[a-f0-9]{64}$")] string Proof);
+    public record CompleteRequest([Required, StringLength(100)] string State, [Required, RegularExpression("^[a-f0-9]{64}$")] string Proof,
+        [Required, StringLength(100, MinimumLength = 43)] string Receipt);
     public record ImportRequest([StringLength(100)] string ListId, [StringLength(1000)] string Url);
 
     [HttpGet("{provider}/lists")]
@@ -44,7 +45,7 @@ public class ImportController(SVContext db, IDService ids, MusicImport music, So
     [HttpPost("{provider}/complete")]
     public async Task<IActionResult> Complete(string provider, CompleteRequest request)
     {
-        await music.Complete(ids.UserId(this), provider, request.State, request.Proof);
+        await music.Complete(ids.UserId(this), provider, request.State, request.Proof, request.Receipt);
         return NoContent();
     }
 

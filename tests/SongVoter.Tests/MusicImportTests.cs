@@ -83,13 +83,18 @@ public class MusicImportTests
                 Assert.Equal(HttpStatusCode.Redirect, callback.StatusCode);
                 Assert.StartsWith(service == "youtube" ? "com.coflnet.songvoter://import-callback" : "/app", callback.Headers.Location!.ToString());
                 Assert.Contains("lang=de", callback.Headers.Location.ToString());
-                var exchanges = provider.Exchanges;
-                await stranger.GetAsync($"/api/import/{service}/callback?state={state}&code=provider-code");
-                Assert.Equal(exchanges, provider.Exchanges); // Callback replay cannot exchange again.
-                Assert.Equal(HttpStatusCode.BadRequest, (await stranger.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof })).StatusCode);
-                Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof = new string('b', 64) })).StatusCode);
-                Assert.Equal(HttpStatusCode.NoContent, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof })).StatusCode);
+                var receipt = QueryHelpers.ParseQuery(new Uri(new Uri("https://songvoter.party"), callback.Headers.Location).Query)["receipt"].ToString();
+                Assert.Equal(43, receipt.Length);
                 Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof })).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof, receipt = new string('x', 43) })).StatusCode);
+                var exchanges = provider.Exchanges;
+                var replay = await stranger.GetAsync($"/api/import/{service}/callback?state={state}&code=provider-code");
+                Assert.DoesNotContain("receipt=", replay.Headers.Location!.ToString());
+                Assert.Equal(exchanges, provider.Exchanges); // Callback replay cannot exchange again.
+                Assert.Equal(HttpStatusCode.BadRequest, (await stranger.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof, receipt })).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof = new string('b', 64), receipt })).StatusCode);
+                Assert.Equal(HttpStatusCode.NoContent, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof, receipt })).StatusCode);
+                Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync($"/api/import/{service}/complete", new { state, proof, receipt })).StatusCode);
                 var lists = await Json(await guest.GetAsync($"/api/import/{service}/lists"));
                 Assert.True(lists["connected"]!.GetValue<bool>());
                 Assert.Equal("liked", lists["lists"]![0]!["id"]!.GetValue<string>());
@@ -118,8 +123,11 @@ public class MusicImportTests
             Assert.Equal(30, (await Json(await guest.GetAsync("/api/lists/favourites")))["songs"]!.AsArray().Count);
             var cancelled = await Json(await guest.PostAsJsonAsync("/api/import/spotify/connect", new { proof }));
             var cancelState = Str(cancelled, "state");
-            await guest.GetAsync($"/api/import/spotify/callback?state={cancelState}&error=access_denied");
-            Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync("/api/import/spotify/complete", new { state = cancelState, proof })).StatusCode);
+            var cancelledReturn = await guest.GetAsync($"/api/import/spotify/callback?state={cancelState}&error=access_denied");
+            var cancelledReceipt = QueryHelpers.ParseQuery(new Uri(new Uri("https://songvoter.party"), cancelledReturn.Headers.Location!).Query)["receipt"].ToString();
+            var cancelledResult = await guest.PostAsJsonAsync("/api/import/spotify/complete", new { state = cancelState, proof, receipt = cancelledReceipt });
+            Assert.Equal(HttpStatusCode.BadRequest, cancelledResult.StatusCode);
+            Assert.Contains("Connection cancelled", await cancelledResult.Content.ReadAsStringAsync());
             Assert.DoesNotContain("evil.test", (await guest.GetAsync("/api/import/spotify/callback?state=invalid&error=https://evil.test")).Headers.Location!.ToString());
             var otherStart = await Json(await stranger.PostAsJsonAsync("/api/import/spotify/connect", new { proof }));
             Assert.Equal(HttpStatusCode.NoContent, (await guest.DeleteAsync("/api/user")).StatusCode);

@@ -92,6 +92,7 @@ for (const provider of ['youtube', 'spotify']) {
     const host = await hostSession();
     let guestToken, proof, connected = false;
     const state = `browser-${provider}-state`;
+    const receipt = 'r'.repeat(43);
     const name = provider === 'youtube' ? 'YouTube' : 'Spotify';
     try {
       const song = await (await host.post('/api/songs/import', {data:{url:process.env.E2E_SONG_URL || 'https://youtu.be/dX3k_QDnzHE'}})).json();
@@ -113,14 +114,14 @@ for (const provider of ['youtube', 'spotify']) {
           return route.fulfill({json:{state,url:`https://provider.example/authorize?state=${state}`}});
         }
         if (path.endsWith('/complete')) {
-          expect(request.postDataJSON()).toEqual({state,proof});
+          expect(request.postDataJSON()).toEqual({state,proof,receipt});
           expect(request.headers().authorization).toBe(`Bearer ${guestToken}`);
           connected = true;
           return route.fulfill({status:204});
         }
         return route.abort();
       });
-      await page.route('https://provider.example/**', route => route.fulfill({contentType:'text/html', body:`<script>location.replace(${JSON.stringify((process.env.WEB_URL || 'http://127.0.0.1:4307') + `/app?import=${provider}&state=${state}&lang=en`)});</script>`}));
+      await page.route('https://provider.example/**', route => route.fulfill({contentType:'text/html', body:`<script>location.replace(${JSON.stringify((process.env.WEB_URL || 'http://127.0.0.1:4307') + `/app?import=${provider}&state=${state}&receipt=${receipt}&lang=en`)});</script>`}));
       await page.route(`**/api/import/${provider}`, async route => {
         expect(route.request().postDataJSON()).toEqual({listId:'saved-list'});
         const result = await host.post('/api/party/add', {headers:{Authorization:`Bearer ${guestToken}`},data:[song.id]});

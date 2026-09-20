@@ -20,7 +20,7 @@ namespace Coflnet.SongVoter.Service;
 // Only fixed provider endpoints are called. OAuth credentials never reach the browser.
 public class MusicImport(SVContext db, IConfiguration config, IHttpClientFactory clients)
 {
-    public record Pending(string ProofHash, string Verifier, bool Native, string Language, DateTime TokenExpiry);
+    public record Pending(string ProofHash, string Verifier, bool Native, string Language, DateTime TokenExpiry, string ReceiptHash = null);
     public record MusicList(string Id, string Name);
     public record ListPage(IReadOnlyList<MusicList> Lists, string Next);
     public record SongPage(IReadOnlyList<ExternalSong> Songs, string Next);
@@ -87,30 +87,35 @@ public class MusicImport(SVContext db, IConfiguration config, IHttpClientFactory
         if (pending == null) return "/app?oauthError=expired";
         var data = JsonSerializer.Deserialize<Pending>(Unprotect(pending.AuthCode));
         // Claim the callback once, across replicas. Completing still requires the originating device's proof and JWT.
-        if (await db.Set<Oauth2Token>().Where(t => t.Id == pending.Id && t.Scropes == "pending").ExecuteUpdateAsync(s => s.SetProperty(t => t.Scropes, "exchanging")) == 1) {
-            pending.Scropes = "cancelled";
-            if (string.IsNullOrEmpty(error) && !string.IsNullOrEmpty(code)) {
-                try {
-                    var token = await Token(provider, new() { ["grant_type"] = "authorization_code", ["code"] = code, ["code_verifier"] = data.Verifier, ["redirect_uri"] = Callback(provider) });
-                    pending.AccessToken = Protect(token.GetProperty("access_token").GetString());
-                    pending.RefreshToken = token.TryGetProperty("refresh_token", out var refresh) ? Protect(refresh.GetString()) : null;
-                    pending.AuthCode = Protect(JsonSerializer.Serialize(data with { TokenExpiry = DateTime.UtcNow.AddSeconds(token.GetProperty("expires_in").GetInt32()) }));
-                    pending.Scropes = "complete";
-                } catch (ApiException) { pending.Scropes = "failed"; }
-            }
-            await db.SaveChangesAsync();
+        // Never disclose the return receipt on a replay: knowing the start state/proof alone must not link another browser's account.
+        if (await db.Set<Oauth2Token>().Where(t => t.Id == pending.Id && t.Scropes == "pending").ExecuteUpdateAsync(s => s.SetProperty(t => t.Scropes, "exchanging")) != 1)
+            return "/app?oauthError=expired";
+        var receipt = Random();
+        data = data with { ReceiptHash = Hash(receipt) };
+        pending.AuthCode = Protect(JsonSerializer.Serialize(data));
+        pending.Scropes = "cancelled";
+        if (string.IsNullOrEmpty(error) && !string.IsNullOrEmpty(code)) {
+            try {
+                var token = await Token(provider, new() { ["grant_type"] = "authorization_code", ["code"] = code, ["code_verifier"] = data.Verifier, ["redirect_uri"] = Callback(provider) });
+                pending.AccessToken = Protect(token.GetProperty("access_token").GetString());
+                pending.RefreshToken = token.TryGetProperty("refresh_token", out var refresh) ? Protect(refresh.GetString()) : null;
+                pending.AuthCode = Protect(JsonSerializer.Serialize(data with { TokenExpiry = DateTime.UtcNow.AddSeconds(token.GetProperty("expires_in").GetInt32()) }));
+                pending.Scropes = "complete";
+            } catch (ApiException) { pending.Scropes = "failed"; }
         }
+        await db.SaveChangesAsync();
         var destination = data.Native ? "com.coflnet.songvoter://import-callback" : "/app";
-        return QueryHelpers.AddQueryString(destination, new Dictionary<string, string> { ["import"] = provider, ["state"] = state, ["lang"] = data.Language });
+        return QueryHelpers.AddQueryString(destination, new Dictionary<string, string> { ["import"] = provider, ["state"] = state, ["receipt"] = receipt, ["lang"] = data.Language });
     }
 
-    public async Task Complete(int userId, string provider, string state, string proof)
+    public async Task Complete(int userId, string provider, string state, string proof, string receipt)
     {
         var platform = Platform(provider);
         using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         var marker = PendingMarker(state);
         var token = await db.Set<Oauth2Token>().SingleOrDefaultAsync(t => t.User.Id == userId && t.ExternalId == marker && t.Platform == platform && t.Expiration > DateTime.UtcNow);
-        if (token == null || JsonSerializer.Deserialize<Pending>(Unprotect(token.AuthCode)).ProofHash != Hash(proof))
+        var pending = token == null ? null : JsonSerializer.Deserialize<Pending>(Unprotect(token.AuthCode));
+        if (pending == null || pending.ProofHash != Hash(proof) || pending.ReceiptHash != Hash(receipt))
             throw new ApiException(HttpStatusCode.BadRequest, "Return to the browser or device where you started connecting.");
         if (token.Scropes != "complete") throw new ApiException(HttpStatusCode.BadRequest,
             token.Scropes == "cancelled" ? "Connection cancelled. Choose a service to try again." : "The music account could not connect. Please try again.");
