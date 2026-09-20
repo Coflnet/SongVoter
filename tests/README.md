@@ -2,10 +2,13 @@
 
 Unit tests: `dotnet test tests/SongVoter.Tests --filter Category=Unit`.
 
-The full HTTP integration test needs PostgreSQL 18 with permission to create a
-temporary database. Set `SV_TEST_DATABASE` to a **test** PostgreSQL connection,
-then run `dotnet test tests/SongVoter.Tests`. Each run creates a randomly named
+The integration suite needs PostgreSQL 18 and CockroachDB 25.2 with permission to
+create temporary databases. Set `SV_TEST_DATABASE` and `SV_TEST_COCKROACH` to
+**test** connections, then run `dotnet test tests/SongVoter.Tests`. CI starts both
+servers. Each run creates a randomly named
 database, applies all migrations, and removes only that database on completion.
+The legacy upgrade checks duplicate queue entries, preserved votes/favourites/play
+counts, and repeated startup against both database engines.
 
 The test uses real authentication, HTTP controllers, transactions, and PostgreSQL.
 External catalog metadata is deterministic; no Google or Spotify credentials are

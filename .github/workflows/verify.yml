@@ -23,9 +23,18 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - run: dotnet restore tests/SongVoter.Tests --locked-mode
+      - name: Start legacy database compatibility check
+        run: |
+          docker run -d --name songvoter-cockroach -p 127.0.0.1:26379:26257 cockroachdb/cockroach:v25.2.22 start-single-node --insecure
+          for attempt in $(seq 1 60); do
+            if docker exec songvoter-cockroach cockroach sql --insecure --execute='SELECT 1'; then exit 0; fi
+            sleep 1
+          done
+          exit 1
       - run: dotnet test tests/SongVoter.Tests --no-restore --logger trx
         env:
           SV_TEST_DATABASE: Host=localhost;Database=songvoter;Username=songvoter;Password=songvoter
+          SV_TEST_COCKROACH: Host=localhost;Port=26379;Database=defaultdb;Username=root;SSL Mode=Disable
       - uses: actions/upload-artifact@v4
         if: always()
         with:

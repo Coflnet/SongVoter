@@ -42,6 +42,8 @@ namespace Coflnet.SongVoter.Migrations
                 maxLength: 12,
                 nullable: true);
 
+            migrationBuilder.Sql(LegacyQueue.MergeDuplicates);
+
             migrationBuilder.CreateIndex(
                 name: "IX_PartySongs_PartyId_SongId",
                 table: "PartySongs",

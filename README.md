@@ -41,6 +41,14 @@ dotnet run -- --migrate-only
 dotnet run
 ```
 
+The existing CockroachDB service uses a separate, resumable upgrade in
+`Migrations/SchemaUpgrade.cs`: CockroachDB does not support EF's PostgreSQL
+migration lock or transactional schema changes. It upgrades the known 2023
+schema, preserving favourites and consolidating duplicate queue votes/play
+counts before adding uniqueness. Back up the database first. Review and extend
+this explicit path when adding a migration; unknown migrations stop deployment.
+New installations use PostgreSQL and standard EF migrations.
+
 The API listens on port 4200 (override with `ASPNETCORE_URLS`). Swagger is at
 `/api/docs`. `/status` checks database readiness, including an empty database;
 `/health/live` is the process liveness check. For an isolated local database,

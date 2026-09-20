@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
 using Coflnet.Security.OpenBao;
 using Coflnet.SongVoter.DBModels;
+using Coflnet.SongVoter.Migrations;
 
 namespace Coflnet.SongVoter;
 
@@ -17,7 +17,7 @@ public class Program
         using var host = CreateHostBuilder(args.Where(a => a != "--migrate-only").ToArray()).Build();
         if (args.Contains("--migrate-only")) {
             using var scope = host.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<SVContext>().Database.MigrateAsync();
+            await SchemaUpgrade.Apply(scope.ServiceProvider.GetRequiredService<SVContext>());
             return;
         }
         await host.RunAsync();
