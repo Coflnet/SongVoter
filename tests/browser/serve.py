@@ -11,7 +11,8 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/api/'):
             return self.proxy()
-        if not os.path.isfile(self.path.split('?')[0].lstrip('/')):
+        target = self.path.split('?')[0].lstrip('/') or '.'
+        if not os.path.isfile(target) and not os.path.isfile(os.path.join(target, 'index.html')):
             self.path = '/index.html'
         super().do_GET()
 

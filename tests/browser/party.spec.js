@@ -86,3 +86,71 @@ test('an invalid QR invite shows a recoverable join screen', async ({page}) => {
   await expect(page.getByText('This invite has expired or the party has ended.',{exact:false})).toBeVisible({timeout:45000});
   await expect(page.getByRole('button',{name:'Join',exact:true})).toBeVisible();
 });
+
+for (const provider of ['youtube', 'spotify']) {
+  test(`${provider} OAuth return keeps the QR guest profile and imports a selected list`, async ({page}) => {
+    const host = await hostSession();
+    let guestToken, proof, connected = false;
+    const state = `browser-${provider}-state`;
+    const name = provider === 'youtube' ? 'YouTube' : 'Spotify';
+    try {
+      const song = await (await host.post('/api/songs/import', {data:{url:process.env.E2E_SONG_URL || 'https://youtu.be/dX3k_QDnzHE'}})).json();
+      const party = await (await host.post('/api/party', {data:{name:'Playlist import party', supportedPlatforms:['youtube','spotify']}})).json();
+      page.on('response', async response => {
+        if (response.url().endsWith('/api/auth/anonymous') && response.ok()) guestToken = (await response.json()).token;
+      });
+      // Deterministic provider boundary. Profile, party, favourites and queue still use the real API.
+      // Separate backend integration tests exercise the OAuth exchange, proof binding and provider endpoints.
+      await page.route(`**/api/import/${provider}/**`, async route => {
+        const request = route.request();
+        const path = new URL(request.url()).pathname;
+        if (path.endsWith('/lists')) return route.fulfill({json:{connected,available:true,lists:connected ? [{id:'liked',name:'Liked songs'},{id:'saved-list',name:'Kitchen favourites'}] : [],next:null}});
+        if (path.endsWith('/connect')) {
+          const data = request.postDataJSON();
+          proof = data.proof;
+          expect(proof).toMatch(/^[a-f0-9]{64}$/);
+          expect(data.native).toBe(false);
+          return route.fulfill({json:{state,url:`https://provider.example/authorize?state=${state}`}});
+        }
+        if (path.endsWith('/complete')) {
+          expect(request.postDataJSON()).toEqual({state,proof});
+          expect(request.headers().authorization).toBe(`Bearer ${guestToken}`);
+          connected = true;
+          return route.fulfill({status:204});
+        }
+        return route.abort();
+      });
+      await page.route('https://provider.example/**', route => route.fulfill({contentType:'text/html', body:`<script>location.replace(${JSON.stringify((process.env.WEB_URL || 'http://127.0.0.1:4307') + `/app?import=${provider}&state=${state}&lang=en`)});</script>`}));
+      await page.route(`**/api/import/${provider}`, async route => {
+        expect(route.request().postDataJSON()).toEqual({listId:'saved-list'});
+        const result = await host.post('/api/party/add', {headers:{Authorization:`Bearer ${guestToken}`},data:[song.id]});
+        expect(result.ok()).toBeTruthy();
+        await route.fulfill({json:{added:1,total:1,limit:30,limitReached:false,moreAvailable:false}});
+      });
+      await page.goto(`/join/${party.code}`);
+      await semantics(page);
+      await expect(page.getByRole('button',{name,exact:true})).toBeVisible({timeout:45000});
+      await page.getByRole('button',{name,exact:true}).click();
+      await expect(page).toHaveURL(new RegExp(`/app\\?import=${provider}`));
+      await semantics(page);
+      await expect(page.getByText('Kitchen favourites',{exact:false})).toBeVisible({timeout:45000});
+      await page.getByText('Kitchen favourites',{exact:false}).click();
+      await expect(page.getByRole('button',{name:'Use my favourites',exact:true})).toBeVisible();
+      let queue = await (await host.get('/api/party')).json();
+      expect(queue.members).toBe(2);
+      expect(queue.queue).toHaveLength(1);
+      expect(queue.queue[0].score).toBe(1);
+      await page.getByRole('button',{name:'Use my favourites',exact:true}).click();
+      queue = await (await host.get('/api/party')).json();
+      expect(queue.queue).toHaveLength(1);
+      await page.reload();
+      await semantics(page);
+      await expect(page.getByRole('button',{name:'Use my favourites',exact:true})).toBeVisible({timeout:45000});
+      await expect(page.getByText('Kitchen favourites',{exact:false})).toHaveCount(0);
+    } finally {
+      if (guestToken) await host.delete('/api/user',{headers:{Authorization:`Bearer ${guestToken}`}});
+      await host.delete('/api/user');
+      await host.dispose();
+    }
+  });
+}
