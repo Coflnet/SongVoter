@@ -121,6 +121,14 @@ public class MusicImportTests
             await guest.GetAsync($"/api/import/spotify/callback?state={cancelState}&error=access_denied");
             Assert.Equal(HttpStatusCode.BadRequest, (await guest.PostAsJsonAsync("/api/import/spotify/complete", new { state = cancelState, proof })).StatusCode);
             Assert.DoesNotContain("evil.test", (await guest.GetAsync("/api/import/spotify/callback?state=invalid&error=https://evil.test")).Headers.Location!.ToString());
+            var otherStart = await Json(await stranger.PostAsJsonAsync("/api/import/spotify/connect", new { proof }));
+            Assert.Equal(HttpStatusCode.NoContent, (await guest.DeleteAsync("/api/user")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await guest.GetAsync("/api/user/info")).StatusCode);
+            using (var scope = app.Services.CreateScope()) {
+                var remaining = await scope.ServiceProvider.GetRequiredService<SVContext>().Set<Oauth2Token>().ToListAsync();
+                Assert.Equal(MusicImport.PendingMarker(Str(otherStart, "state")), Assert.Single(remaining).ExternalId);
+            }
+            Assert.Equal(HttpStatusCode.NoContent, (await stranger.DeleteAsync("/api/user")).StatusCode);
         } finally {
             NpgsqlConnection.ClearAllPools();
             await using var drop = new NpgsqlCommand($"DROP DATABASE \"{name}\" WITH (FORCE)", admin);

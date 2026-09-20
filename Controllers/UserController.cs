@@ -34,6 +34,7 @@ public class UserController(SVContext db, IDService ids, PartyService parties) :
     {
         var user = await db.Users.FindAsync(ids.UserId(this));
         if (await parties.GetUserParty(user, true) != null) await parties.LeaveParty(user);
+        await db.Set<Oauth2Token>().Where(t => t.User.Id == user.Id).ExecuteDeleteAsync();
         db.PlayLists.RemoveRange(await db.PlayLists.Where(p => p.Owner == user.Id).ToListAsync());
         db.Users.Remove(user);
         await db.SaveChangesAsync();
