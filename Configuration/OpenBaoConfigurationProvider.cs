@@ -79,7 +79,7 @@ internal sealed class OpenBaoConfigurationProvider : ConfigurationProvider, IDis
                 TrustMode = X509ChainTrustMode.CustomRootTrust,
                 RevocationMode = X509RevocationMode.NoCheck
             };
-            handler.SslOptions.CertificateChainPolicy.CustomTrustStore.Add(X509Certificate2.CreateFromPemFile(options.CaCert));
+            handler.SslOptions.CertificateChainPolicy.CustomTrustStore.Add(X509Certificate2.CreateFromPem(await File.ReadAllTextAsync(options.CaCert).ConfigureAwait(false)));
         }
         using var client = new HttpClient(handler) { BaseAddress = new Uri(options.Address.TrimEnd('/') + "/"), Timeout = TimeSpan.FromSeconds(15) };
 
