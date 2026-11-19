@@ -6,7 +6,7 @@ test('landing loads without authentication and joins directly from an invite', a
     if (/\/api\/|flutter_bootstrap|main\.dart/.test(request.url())) appRequests.push(request.url());
   });
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Good music is a group effort.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/^QR song requests\.\s*No guest accounts\.$/);
   await expect(page.getByRole('link', { name: 'Get the host app' })).toHaveAttribute('href', '/downloads/songvoter.apk');
   expect(appRequests).toEqual([]);
   for (const width of [390, 1440]) {
@@ -33,16 +33,16 @@ test('German browser gets localized landing and app, with a language switch', as
     await page.goto('/');
     await expect(page).toHaveURL(/\/de\/$/);
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
-    await expect(page.getByRole('heading', {level: 1})).toHaveText('Gute Musik ist Teamwork.');
+    await expect(page.getByRole('heading', {level: 1})).toHaveText(/^Musikwünsche per QR-Code\.\s*Ohne Gäste-Anmeldung\.$/);
     await page.getByText('Ist SongVoter kostenlos?', {exact: true}).click();
     await expect(page.getByText('Ja. SongVoter ist kostenlos nutzbar.', {exact: true})).toBeVisible();
     await page.getByRole('link', {name: 'So funktioniert SongVoter'}).click();
     await expect(page).toHaveURL(/\/de\/so-funktionierts\/$/);
-    await expect(page.getByRole('heading', {level: 1})).toHaveText('Scannen. Importieren. Gemeinsam DJ sein.');
+    await expect(page.getByRole('heading', {level: 1})).toHaveText('Musikwünsche per QR-Code ohne Gäste-Anmeldung');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
     await page.screenshot({path: 'test-results/german-guide.png', fullPage: true});
     await page.getByRole('link', {name: 'English', exact: true}).click();
-    await expect(page.getByRole('heading', {level: 1})).toHaveText('Scan. Import. Let everyone DJ.');
+    await expect(page.getByRole('heading', {level: 1})).toHaveText('QR song requests and voting without guest accounts');
     await page.goto('/app?lang=de');
     await page.locator('flt-semantics-placeholder').waitFor({timeout:45000});
     await page.locator('flt-semantics-placeholder').evaluate(element => element.click());
@@ -65,7 +65,7 @@ test('how-to articles and language alternatives are indexable without JavaScript
       const response = await page.goto(path);
       expect(response.status()).toBe(200);
       await expect(page.locator('html')).toHaveAttribute('lang',language);
-      await expect(page.locator('main h2')).toHaveCount(7);
+      await expect(page.locator('main h2')).toHaveCount(10);
       await expect(page.locator('link[rel=canonical]')).toHaveAttribute('href',`https://songvoter.party${path}`);
       await expect(page.locator('link[hreflang=de]')).toHaveAttribute('href','https://songvoter.party/de/so-funktionierts/');
       expect(await page.locator('main').innerText()).not.toMatch(/paid boosts|bezahlte Boosts/i);

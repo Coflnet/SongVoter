@@ -19,7 +19,7 @@ async function semantics(page) {
   await page.locator('flt-semantics-placeholder').evaluate(element => element.click());
 }
 
-test('QR invite → silent guest → find song → vote → host plays → reload retains favourites', async ({ page }) => {
+test('QR invite → silent guest → find song → vote → host plays → reload retains the vote', async ({ page }) => {
   const host = await hostSession();
   let guestToken;
   try {
@@ -47,11 +47,24 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await search.pressSequentially(term);
     await expect(search).toHaveValue(term);
     await page.getByRole('button', {name:'Search songs', exact:true}).click();
-    const add = page.getByRole('button', {name:`Add ${title} to favourites`, exact:true});
-    await expect(add).toBeVisible();
-    await add.click();
-    await expect(page.getByRole('button', {name:`Remove ${title} from favourites`}).first()).toBeVisible();
+    const request = page.getByRole('button', {name:'Request song', exact:true});
+    await expect(request).toBeVisible();
+    await request.click();
+    await expect(page.getByText('Song requested', {exact:true}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name:'Remove vote', exact:true}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name:'Request song', exact:true})).toHaveCount(0);
     let queue = await (await host.get('/api/party')).json();
+    expect(queue.queue).toHaveLength(1);
+    expect(queue.queue[0].score).toBe(1);
+    await page.getByRole('button', {name:'Remove vote', exact:true}).first().click();
+    await expect(page.getByText('Vote removed', {exact:true}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name:'Remove vote', exact:true})).toHaveCount(0);
+    queue = await (await host.get('/api/party')).json();
+    expect(queue.queue.reduce((sum, entry) => sum + entry.score, 0)).toBe(0);
+    await page.getByRole('button', {name:'Vote for song', exact:true}).first().click();
+    await expect(page.getByText('Vote added', {exact:true}).first()).toBeVisible();
+    await expect(page.getByRole('button', {name:'Remove vote', exact:true}).first()).toBeVisible();
+    queue = await (await host.get('/api/party')).json();
     expect(queue.queue).toHaveLength(1);
     expect(queue.queue[0].score).toBe(1);
     expect(queue.members).toBe(2);
@@ -63,7 +76,7 @@ test('QR invite → silent guest → find song → vote → host plays → reloa
     await semantics(page);
     await expect(page.getByText(/NOW PLAYING/)).toBeVisible({timeout:15000});
     await page.getByRole('button', {name:'Your favourites',exact:true}).click();
-    await expect(page.getByRole('button', {name:`Remove ${title} from favourites`})).toBeVisible();
+    await expect(page.getByRole('button', {name:'Remove vote', exact:true})).toBeVisible();
     queue = await (await host.get('/api/party')).json();
     expect(queue.members).toBe(2);
     // Desktop and landscape remain usable with the same persisted identity.
